@@ -1,5 +1,5 @@
 import { Route } from '@angular/router';
-import { authGuard, guestGuard } from './core/guards';
+import { adminGuard, authGuard, guestGuard } from './core/guards';
 
 export const appRoutes: Route[] = [
   {
@@ -42,6 +42,23 @@ export const appRoutes: Route[] = [
     canActivate: [authGuard],
     loadComponent: () => import('./features/auth/profile.page'),
     title: 'Mi perfil — AppTorneos',
+  },
+  {
+    path: 'torneo/:slug',
+    loadComponent: () => import('./features/tournaments/tournament.page'),
+    title: 'Torneo — AppTorneos',
+  },
+  {
+    path: 'admin/torneos',
+    canActivate: [adminGuard],
+    loadComponent: () => import('./features/admin/admin-tournaments.page'),
+    title: 'Mis torneos — AppTorneos',
+  },
+  {
+    path: 'admin/torneos/crear',
+    canActivate: [adminGuard],
+    loadComponent: () => import('./features/admin/create-tournament.page'),
+    title: 'Crear torneo — AppTorneos',
   },
   { path: '**', redirectTo: '' },
 ];

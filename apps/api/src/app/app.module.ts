@@ -9,6 +9,7 @@ import { PrismaModule } from '../prisma/prisma.module';
 import { QueuesModule } from '../queues/queues.module';
 import { RedisModule } from '../redis/redis.module';
 import { RolesModule } from '../roles/roles.module';
+import { TournamentsModule } from '../tournaments/tournaments.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { RolesModule } from '../roles/roles.module';
     HealthModule,
     AuthModule,
     RolesModule,
+    TournamentsModule,
   ],
 })
 export class AppModule {}
