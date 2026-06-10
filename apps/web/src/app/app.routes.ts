@@ -1,5 +1,5 @@
 import { Route } from '@angular/router';
-import { adminGuard, authGuard, guestGuard } from './core/guards';
+import { adminGuard, authGuard, guestGuard, verifiedGuard } from './core/guards';
 
 export const appRoutes: Route[] = [
   {
@@ -47,6 +47,48 @@ export const appRoutes: Route[] = [
     path: 'torneo/:slug',
     loadComponent: () => import('./features/tournaments/tournament.page'),
     title: 'Torneo — AppTorneos',
+  },
+  {
+    path: 'torneo/:slug/inscripcion',
+    canActivate: [verifiedGuard],
+    loadComponent: () => import('./features/tournaments/register.page'),
+    title: 'Inscripción — AppTorneos',
+  },
+  {
+    path: 'torneo/:slug/solicitar-juez',
+    canActivate: [verifiedGuard],
+    loadComponent: () => import('./features/tournaments/apply-judge.page'),
+    title: 'Solicitar ser juez — AppTorneos',
+  },
+  {
+    path: 'torneo/:slug/mi-decklist',
+    canActivate: [verifiedGuard],
+    loadComponent: () => import('./features/player/my-decklist.page'),
+    title: 'Mi decklist — AppTorneos',
+  },
+  {
+    path: 'mi/torneos',
+    canActivate: [verifiedGuard],
+    loadComponent: () => import('./features/player/my-tournaments.page'),
+    title: 'Mis torneos — AppTorneos',
+  },
+  {
+    path: 'juez/torneo/:slug/decklists',
+    canActivate: [verifiedGuard],
+    loadComponent: () => import('./features/judge/judge-decklists.page'),
+    title: 'Decklists — AppTorneos',
+  },
+  {
+    path: 'juez/torneo/:slug/decklists/:userId',
+    canActivate: [verifiedGuard],
+    loadComponent: () => import('./features/judge/judge-decklist-detail.page'),
+    title: 'Decklist — AppTorneos',
+  },
+  {
+    path: 'admin/torneos/:slug/registros',
+    canActivate: [adminGuard],
+    loadComponent: () => import('./features/admin/admin-registrations.page'),
+    title: 'Registros — AppTorneos',
   },
   {
     path: 'admin/torneos',

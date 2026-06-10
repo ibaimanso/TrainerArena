@@ -6,6 +6,8 @@ import {
   type ViewerContext,
 } from '../../core/tournaments.service';
 import { AuthService } from '../../core/auth.service';
+import { apiErrorMessage } from '../../core/api-error';
+import { PlayerService } from '../../core/player.service';
 import { TournamentHeaderComponent } from './tournament-header.component';
 
 /** Public tournament page (SPEC §12 /torneo/{slug}): info + context-dependent CTAs. */
@@ -69,11 +71,18 @@ import { TournamentHeaderComponent } from './tournament-header.component';
                 </a>
               } @else if (v.registrationStatus === 'active') {
                 <p class="rounded bg-green-50 px-3 py-2 text-green-800">Ya estás inscrito en este torneo.</p>
+                @if (dropError()) {
+                  <p class="rounded bg-red-50 px-3 py-2 text-red-700">{{ dropError() }}</p>
+                }
                 <div class="flex flex-wrap gap-2">
                   <a [routerLink]="['/torneo', t.slug, 'mi-decklist']"
                      class="rounded bg-indigo-600 px-4 py-2 font-semibold text-white hover:bg-indigo-500">Mi decklist</a>
                   <a [routerLink]="['/torneo', t.slug, 'match-actual']"
                      class="rounded border border-indigo-600 px-4 py-2 font-semibold text-indigo-600 hover:bg-indigo-50">Mi match</a>
+                  <button type="button" (click)="drop()" [disabled]="dropping()"
+                          class="rounded border border-red-300 px-4 py-2 font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50">
+                    {{ dropping() ? 'Procesando…' : 'Darme de baja' }}
+                  </button>
                 </div>
               } @else if (v.registrationStatus === 'pending_payment') {
                 <p class="rounded bg-amber-50 px-3 py-2 text-amber-800">
@@ -120,20 +129,43 @@ import { TournamentHeaderComponent } from './tournament-header.component';
 export default class TournamentPage implements OnInit {
   readonly slug = input.required<string>();
   private readonly tournaments = inject(TournamentsService);
+  private readonly player = inject(PlayerService);
   protected readonly auth = inject(AuthService);
 
   protected readonly tournament = signal<TournamentDetail | null>(null);
   protected readonly viewer = signal<ViewerContext | null>(null);
   protected readonly notFound = signal(false);
+  protected readonly dropping = signal(false);
+  protected readonly dropError = signal<string | null>(null);
 
   async ngOnInit(): Promise<void> {
     await this.auth.loadOnce();
+    await this.reload();
+  }
+
+  private async reload(): Promise<void> {
     try {
       const data = await this.tournaments.detail(this.slug());
       this.tournament.set(data.tournament);
       this.viewer.set(data.viewer);
     } catch {
       this.notFound.set(true);
+    }
+  }
+
+  protected async drop(): Promise<void> {
+    if (!confirm('¿Seguro que quieres darte de baja? Tu plaza no se libera y no podrás volver a inscribirte.')) {
+      return;
+    }
+    this.dropping.set(true);
+    this.dropError.set(null);
+    try {
+      await this.player.drop(this.slug());
+      await this.reload();
+    } catch (e) {
+      this.dropError.set(apiErrorMessage(e));
+    } finally {
+      this.dropping.set(false);
     }
   }
 }
