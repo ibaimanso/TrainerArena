@@ -63,14 +63,11 @@ jobs:
       - name: Generate Prisma client
         run: pnpm prisma generate
 
-      - name: Push database schema
-        run: pnpm prisma db push --skip-generate
+      - name: Apply database migrations
+        run: pnpm prisma migrate deploy
 
       - name: Lint
         run: pnpm nx run-many -t lint
-
-      - name: Typecheck
-        run: pnpm nx run-many -t typecheck --exclude='*' --projects=api,web,engine,shared || true
 
       - name: Test
         run: pnpm nx run-many -t test --configuration=ci

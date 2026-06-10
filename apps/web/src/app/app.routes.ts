@@ -49,6 +49,21 @@ export const appRoutes: Route[] = [
     title: 'Torneo — AppTorneos',
   },
   {
+    path: 'torneo/:slug/clasificacion',
+    loadComponent: () => import('./features/tournaments/standings.page'),
+    title: 'Clasificación — AppTorneos',
+  },
+  {
+    path: 'torneo/:slug/pareos/ronda/:n',
+    loadComponent: () => import('./features/tournaments/pairings.page'),
+    title: 'Pareos — AppTorneos',
+  },
+  {
+    path: 'torneo/:slug/ronda-actual',
+    loadComponent: () => import('./features/tournaments/current-round.page'),
+    title: 'Ronda actual — AppTorneos',
+  },
+  {
     path: 'torneo/:slug/inscripcion',
     canActivate: [verifiedGuard],
     loadComponent: () => import('./features/tournaments/register.page'),
@@ -148,5 +163,9 @@ export const appRoutes: Route[] = [
     loadComponent: () => import('./features/admin/create-tournament.page'),
     title: 'Crear torneo — AppTorneos',
   },
-  { path: '**', redirectTo: '' },
+  {
+    path: '**',
+    loadComponent: () => import('./features/errors/not-found.page'),
+    title: 'Página no encontrada — AppTorneos',
+  },
 ];

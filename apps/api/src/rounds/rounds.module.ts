@@ -4,6 +4,7 @@ import { TournamentsModule } from '../tournaments/tournaments.module';
 import { DisputesController } from './disputes.controller';
 import { MatchesController } from './matches.controller';
 import { MatchesService } from './matches.service';
+import { PublicRoundsController } from './public-rounds.controller';
 import { RoundsAdminController } from './rounds-admin.controller';
 import { RoundsService } from './rounds.service';
 import { RoundsWorker } from './rounds.worker';
@@ -11,7 +12,12 @@ import { SnapshotService } from './snapshot.service';
 
 @Module({
   imports: [AuthModule, TournamentsModule],
-  controllers: [RoundsAdminController, MatchesController, DisputesController],
+  controllers: [
+    RoundsAdminController,
+    MatchesController,
+    DisputesController,
+    PublicRoundsController,
+  ],
   providers: [SnapshotService, RoundsService, MatchesService, RoundsWorker],
   exports: [SnapshotService, RoundsService, MatchesService],
 })
