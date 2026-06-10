@@ -95,6 +95,24 @@ export const appRoutes: Route[] = [
     title: 'Decklist — AppTorneos',
   },
   {
+    path: 'torneo/:slug/match-actual',
+    canActivate: [verifiedGuard],
+    loadComponent: () => import('./features/player/my-match.page'),
+    title: 'Mi match — AppTorneos',
+  },
+  {
+    path: 'admin/torneo/:slug/rondas',
+    canActivate: [adminGuard],
+    loadComponent: () => import('./features/admin/admin-rounds.page'),
+    title: 'Rondas — AppTorneos',
+  },
+  {
+    path: 'admin/rondas/:id/pareo-manual',
+    canActivate: [adminGuard],
+    loadComponent: () => import('./features/admin/manual-pairing.page'),
+    title: 'Pareo manual — AppTorneos',
+  },
+  {
     path: 'admin/torneos/:slug/registros',
     canActivate: [adminGuard],
     loadComponent: () => import('./features/admin/admin-registrations.page'),
