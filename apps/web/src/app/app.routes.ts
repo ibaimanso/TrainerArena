@@ -83,6 +83,24 @@ export const appRoutes: Route[] = [
     title: 'Mis torneos — AppTorneos',
   },
   {
+    path: 'juez/cola',
+    canActivate: [verifiedGuard],
+    loadComponent: () => import('./features/judge/judge-queue.page'),
+    title: 'Cola de juez — AppTorneos',
+  },
+  {
+    path: 'juez/call/:id',
+    canActivate: [verifiedGuard],
+    loadComponent: () => import('./features/judge/judge-call.page'),
+    title: 'Llamada a juez — AppTorneos',
+  },
+  {
+    path: 'juez/disputa/:matchId',
+    canActivate: [verifiedGuard],
+    loadComponent: () => import('./features/judge/judge-dispute.page'),
+    title: 'Resolver disputa — AppTorneos',
+  },
+  {
     path: 'juez/torneo/:slug/decklists',
     canActivate: [verifiedGuard],
     loadComponent: () => import('./features/judge/judge-decklists.page'),

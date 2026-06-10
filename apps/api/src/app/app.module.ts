@@ -9,6 +9,7 @@ import { PrismaModule } from '../prisma/prisma.module';
 import { QueuesModule } from '../queues/queues.module';
 import { RedisModule } from '../redis/redis.module';
 import { RolesModule } from '../roles/roles.module';
+import { JudgesModule } from '../judges/judges.module';
 import { RoundsModule } from '../rounds/rounds.module';
 import { PaymentsModule } from '../payments/payments.module';
 import { RealtimeModule } from '../realtime/realtime.module';
@@ -32,6 +33,7 @@ import { TournamentsModule } from '../tournaments/tournaments.module';
     PaymentsModule,
     RegistrationsModule,
     RoundsModule,
+    JudgesModule,
   ],
 })
 export class AppModule {}

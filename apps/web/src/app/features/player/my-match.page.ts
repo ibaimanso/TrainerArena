@@ -6,12 +6,14 @@ import type { ReportResult } from '@apptorneos/shared';
 import { apiErrorMessage } from '../../core/api-error';
 import { events } from '@apptorneos/shared';
 import { RealtimeService } from '../../core/realtime.service';
+import { JudgeService } from '../../core/judge.service';
 import { RoundsService, type MyMatch } from '../../core/rounds.service';
 import { ServerTimeService } from '../../core/server-time.service';
+import { JudgeCallChatComponent } from '../judge/judge-call-chat.component';
 
 /** "Mi match" (SPEC §12): check-in, authoritative timer, report, states. Mobile-first. */
 @Component({
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, JudgeCallChatComponent],
   template: `
     <div class="mx-auto max-w-md space-y-4">
       @if (notFound()) {
@@ -145,11 +147,23 @@ import { ServerTimeService } from '../../core/server-time.service';
           }
         }
 
-        <section class="rounded-lg bg-white p-4 shadow" id="juez">
+        <section class="space-y-3 rounded-lg bg-white p-4 shadow" id="juez">
           <h2 class="text-sm font-semibold">Juez</h2>
-          <p class="mt-2 text-xs text-zinc-500">
-            Las llamadas a juez con chat en vivo estarán disponibles en esta sección.
-          </p>
+          @if (m.judgeCall; as call) {
+            @if (call.assignedJudge) {
+              <p class="rounded bg-indigo-50 px-3 py-2 text-sm text-indigo-800">
+                Te atiende: <strong>{{ call.assignedJudge.name }}</strong>
+              </p>
+            } @else {
+              <p class="rounded bg-amber-50 px-3 py-2 text-sm text-amber-800">Esperando juez…</p>
+            }
+            <app-judge-call-chat [callId]="call.id" />
+          } @else {
+            <button type="button" (click)="callJudge()" [disabled]="busy()"
+                    class="w-full rounded border border-indigo-600 px-4 py-2 font-semibold text-indigo-600 hover:bg-indigo-50 disabled:opacity-50">
+              Llamar juez
+            </button>
+          }
         </section>
       } @else {
         <p class="text-center text-sm text-zinc-500">Cargando partida…</p>
@@ -257,6 +271,23 @@ export default class MyMatchPage implements OnInit, OnDestroy {
       await this.rounds.report(m.id, this.reportResult, this.reportScore || undefined);
       this.reportResult = null;
       this.reportScore = '';
+      await this.reload();
+    } catch (e) {
+      this.error.set(apiErrorMessage(e));
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  private readonly judgeService = inject(JudgeService);
+
+  protected async callJudge(): Promise<void> {
+    const m = this.match();
+    if (!m) return;
+    this.busy.set(true);
+    this.error.set(null);
+    try {
+      await this.judgeService.createCall(m.id);
       await this.reload();
     } catch (e) {
       this.error.set(apiErrorMessage(e));
