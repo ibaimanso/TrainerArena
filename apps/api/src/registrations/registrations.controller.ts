@@ -11,6 +11,7 @@ import {
 import { canManageTournament, type TournamentStatus } from '@apptorneos/shared';
 import { AuthGuard, RequireRoles } from '../auth/auth.guard';
 import { CurrentUser, type AuthenticatedUser } from '../auth/current-user';
+import { PaymentsService } from '../payments/payments.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { TournamentsService } from '../tournaments/tournaments.service';
 import { RegisterForTournamentDto } from './registrations.dto';
@@ -22,20 +23,21 @@ export class RegistrationsController {
   constructor(
     private readonly registrations: RegistrationsService,
     private readonly tournaments: TournamentsService,
+    private readonly payments: PaymentsService,
     private readonly prisma: PrismaService
   ) {}
 
-  /** Free registration; paid tournaments are handled by the payments module (phase 5). */
+  /** Registration: free → active directly; paid → pending_payment + PayPal approval URL. */
   @Post('tournaments/:slug/register')
   async register(
     @CurrentUser() user: AuthenticatedUser,
     @Param('slug') slug: string,
     @Body() dto: RegisterForTournamentDto
-  ): Promise<{ status: string }> {
+  ): Promise<{ status: string; approvalUrl?: string }> {
     const tournament = await this.tournaments.publicBySlugOrFail(slug);
     if (tournament.feeAmount > 0) {
-      // Implemented in phase 5 (PayPal): the same route will return an approval URL.
-      throw new ForbiddenException('Este torneo es de pago; el pago estará disponible en breve.');
+      const { approvalUrl } = await this.payments.registerPaid(tournament, user.id, dto);
+      return { status: 'pending_payment', approvalUrl };
     }
     const registration = await this.registrations.registerFree(tournament, user.id, dto);
     return { status: registration.status };

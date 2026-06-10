@@ -67,6 +67,16 @@ export const appRoutes: Route[] = [
     title: 'Mi decklist — AppTorneos',
   },
   {
+    path: 'torneo/:slug/pago/volver',
+    loadComponent: () => import('./features/payments/payment-return.page'),
+    title: 'Procesando pago — AppTorneos',
+  },
+  {
+    path: 'pago/cancelar',
+    loadComponent: () => import('./features/payments/payment-cancelled.page'),
+    title: 'Pago cancelado — AppTorneos',
+  },
+  {
     path: 'mi/torneos',
     canActivate: [verifiedGuard],
     loadComponent: () => import('./features/player/my-tournaments.page'),

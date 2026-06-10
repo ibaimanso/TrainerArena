@@ -9,6 +9,7 @@ import { PrismaModule } from '../prisma/prisma.module';
 import { QueuesModule } from '../queues/queues.module';
 import { RedisModule } from '../redis/redis.module';
 import { RolesModule } from '../roles/roles.module';
+import { PaymentsModule } from '../payments/payments.module';
 import { RealtimeModule } from '../realtime/realtime.module';
 import { RegistrationsModule } from '../registrations/registrations.module';
 import { TournamentsModule } from '../tournaments/tournaments.module';
@@ -27,6 +28,7 @@ import { TournamentsModule } from '../tournaments/tournaments.module';
     AuthModule,
     RolesModule,
     TournamentsModule,
+    PaymentsModule,
     RegistrationsModule,
   ],
 })
