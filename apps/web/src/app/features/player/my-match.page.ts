@@ -4,6 +4,8 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
 import type { ReportResult } from '@apptorneos/shared';
 import { apiErrorMessage } from '../../core/api-error';
+import { events } from '@apptorneos/shared';
+import { RealtimeService } from '../../core/realtime.service';
 import { RoundsService, type MyMatch } from '../../core/rounds.service';
 import { ServerTimeService } from '../../core/server-time.service';
 
@@ -169,19 +171,35 @@ export default class MyMatchPage implements OnInit, OnDestroy {
   protected reportResult: ReportResult | null = null;
   protected reportScore = '';
 
+  private readonly realtime = inject(RealtimeService);
   private tick: ReturnType<typeof setInterval> | null = null;
   private poll: ReturnType<typeof setInterval> | null = null;
+  private unsubscribe: (() => void) | null = null;
 
   async ngOnInit(): Promise<void> {
     await this.reload();
     this.tick = setInterval(() => this.updateTimer(), 1000);
-    // Soft polling fallback until realtime lands (SPEC §11 degradation).
-    this.poll = setInterval(() => void this.reload(), 10000);
+    // Soft polling fallback when WebSockets are unavailable (SPEC §11 degradation).
+    this.poll = setInterval(() => {
+      if (!this.realtime.connected()) void this.reload();
+    }, 10000);
+    const m = this.match();
+    if (m) {
+      const refresh = () => void this.reload();
+      this.unsubscribe = await this.realtime.subscribe(`private-match.${m.id}`, {
+        [events.matchAwaitingConfirmation]: refresh,
+        [events.matchFinished]: refresh,
+        [events.matchDisputed]: refresh,
+        [events.matchForfeited]: refresh,
+        [events.judgeCallResolved]: refresh,
+      });
+    }
   }
 
   ngOnDestroy(): void {
     if (this.tick) clearInterval(this.tick);
     if (this.poll) clearInterval(this.poll);
+    this.unsubscribe?.();
   }
 
   private async reload(): Promise<void> {
