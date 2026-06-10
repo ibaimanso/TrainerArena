@@ -1,16 +1,44 @@
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
+import { RedisStore } from 'connect-redis';
 import cookieParser from 'cookie-parser';
+import session from 'express-session';
+import type Redis from 'ioredis';
 import { AppModule } from './app/app.module';
+import { csrfMiddleware, serverNowMiddleware } from './common/csrf.middleware';
+import { REDIS } from './redis/redis.module';
 
 async function bootstrap(): Promise<void> {
   // rawBody is required to verify the PayPal webhook signature (SPEC §8.5).
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     rawBody: true,
   });
+  const isProduction = process.env.NODE_ENV === 'production';
+
   app.setGlobalPrefix('api', { exclude: ['health', 'ready'] });
+  app.set('trust proxy', 1);
   app.use(cookieParser());
+
+  const redis = app.get<Redis>(REDIS);
+  app.use(
+    session({
+      store: new RedisStore({ client: redis, prefix: 'session:' }),
+      name: process.env.SESSION_COOKIE_NAME || 'apptorneos_session',
+      secret: process.env.SESSION_SECRET || 'insecure-session-secret',
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: isProduction,
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      },
+    })
+  );
+  app.use(csrfMiddleware);
+  app.use(serverNowMiddleware);
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -18,6 +46,7 @@ async function bootstrap(): Promise<void> {
       transformOptions: { enableImplicitConversion: false },
     })
   );
+
   const port = process.env.API_PORT || 3000;
   await app.listen(port);
   Logger.log(`🚀 API running on: http://localhost:${port}`);

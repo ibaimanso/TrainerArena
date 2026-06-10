@@ -1,2 +1,86 @@
-<app-nx-welcome></app-nx-welcome>
-<router-outlet></router-outlet>
+<div class="min-h-screen flex flex-col bg-zinc-50 text-zinc-900">
+  <header class="bg-indigo-700 text-white shadow">
+    <div class="mx-auto max-w-5xl px-4">
+      <div class="flex h-14 items-center justify-between">
+        <a routerLink="/" class="text-lg font-bold tracking-tight">AppTorneos</a>
+
+        <nav class="hidden sm:flex items-center gap-4 text-sm">
+          <a routerLink="/" routerLinkActive="font-semibold underline" [routerLinkActiveOptions]="{ exact: true }"
+             class="hover:underline">Torneos</a>
+          @if (auth.isLoggedIn()) {
+            <a routerLink="/mi/torneos" routerLinkActive="font-semibold underline" class="hover:underline">Mis torneos</a>
+            @if (auth.isJudge()) {
+              <a routerLink="/juez/cola" routerLinkActive="font-semibold underline" class="hover:underline">Cola de juez</a>
+            }
+            @if (auth.isAdmin()) {
+              <a routerLink="/admin/torneos" routerLinkActive="font-semibold underline" class="hover:underline">Administración</a>
+            }
+            @if (auth.isSuperadmin()) {
+              <a routerLink="/superadmin/usuarios" routerLinkActive="font-semibold underline" class="hover:underline">Usuarios</a>
+            }
+            <a routerLink="/perfil" routerLinkActive="font-semibold underline" class="hover:underline">{{ auth.user()?.name }}</a>
+            <button type="button" (click)="logout()" class="rounded bg-indigo-600 px-3 py-1.5 hover:bg-indigo-500">
+              Salir
+            </button>
+          } @else {
+            <a routerLink="/login" class="hover:underline">Entrar</a>
+            <a routerLink="/registro" class="rounded bg-white px-3 py-1.5 font-semibold text-indigo-700 hover:bg-indigo-50">
+              Crear cuenta
+            </a>
+          }
+        </nav>
+
+        <button type="button" class="sm:hidden p-2" (click)="menuOpen.set(!menuOpen())"
+                aria-label="Abrir menú">
+          <svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+      </div>
+
+      @if (menuOpen()) {
+        <nav class="sm:hidden flex flex-col gap-1 pb-3 text-sm">
+          <a routerLink="/" (click)="menuOpen.set(false)" class="rounded px-2 py-2 hover:bg-indigo-600">Torneos</a>
+          @if (auth.isLoggedIn()) {
+            <a routerLink="/mi/torneos" (click)="menuOpen.set(false)" class="rounded px-2 py-2 hover:bg-indigo-600">Mis torneos</a>
+            @if (auth.isJudge()) {
+              <a routerLink="/juez/cola" (click)="menuOpen.set(false)" class="rounded px-2 py-2 hover:bg-indigo-600">Cola de juez</a>
+            }
+            @if (auth.isAdmin()) {
+              <a routerLink="/admin/torneos" (click)="menuOpen.set(false)" class="rounded px-2 py-2 hover:bg-indigo-600">Administración</a>
+            }
+            @if (auth.isSuperadmin()) {
+              <a routerLink="/superadmin/usuarios" (click)="menuOpen.set(false)" class="rounded px-2 py-2 hover:bg-indigo-600">Usuarios</a>
+            }
+            <a routerLink="/perfil" (click)="menuOpen.set(false)" class="rounded px-2 py-2 hover:bg-indigo-600">Mi perfil</a>
+            <button type="button" (click)="logout()" class="rounded px-2 py-2 text-left hover:bg-indigo-600">Salir</button>
+          } @else {
+            <a routerLink="/login" (click)="menuOpen.set(false)" class="rounded px-2 py-2 hover:bg-indigo-600">Entrar</a>
+            <a routerLink="/registro" (click)="menuOpen.set(false)" class="rounded px-2 py-2 hover:bg-indigo-600">Crear cuenta</a>
+          }
+        </nav>
+      }
+    </div>
+  </header>
+
+  @if (auth.isLoggedIn() && !auth.isVerified()) {
+    <div class="bg-amber-100 text-amber-900 text-sm">
+      <div class="mx-auto max-w-5xl px-4 py-2 flex flex-wrap items-center gap-2">
+        <span>Debes verificar tu dirección de email para poder operar.</span>
+        <a routerLink="/verificar-email" class="font-semibold underline">Más información</a>
+      </div>
+    </div>
+  }
+
+  <main class="flex-1">
+    <div class="mx-auto max-w-5xl px-4 py-6">
+      <router-outlet></router-outlet>
+    </div>
+  </main>
+
+  <footer class="border-t border-zinc-200 bg-white">
+    <div class="mx-auto max-w-5xl px-4 py-4 text-xs text-zinc-500">
+      AppTorneos — torneos online de Pokémon TCG
+    </div>
+  </footer>
+</div>
