@@ -1,0 +1,52 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_USER: apptorneos
+      POSTGRES_PASSWORD: apptorneos
+      POSTGRES_DB: apptorneos
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U apptorneos']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  soketi:
+    image: quay.io/soketi/soketi:1.6-16-alpine
+    ports:
+      - '6001:6001'
+      - '9601:9601'
+    environment:
+      SOKETI_DEFAULT_APP_ID: apptorneos
+      SOKETI_DEFAULT_APP_KEY: apptorneos-key
+      SOKETI_DEFAULT_APP_SECRET: apptorneos-secret
+      SOKETI_DEBUG: '1'
+
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - '1025:1025'
+      - '8025:8025'
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: '1'
+      MP_SMTP_AUTH_ALLOW_INSECURE: '1'
+
+volumes:
+  postgres_data:
+  redis_data:

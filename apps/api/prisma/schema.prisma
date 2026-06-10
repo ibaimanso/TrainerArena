@@ -1,0 +1,463 @@
+// AppTorneos — data model (SPEC.md §3, translated 1:1)
+// Conventions: autoincrement PK `id`; created_at/updated_at unless noted;
+// FKs cascade on delete unless noted; monetary amounts in cents (Int).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- Enums ----------
+
+enum RoleName {
+  superadmin
+  admin
+  judge
+  player
+}
+
+enum TournamentStatus {
+  draft
+  registration_open
+  registration_closed
+  in_progress
+  finished
+  cancelled
+}
+
+enum RegistrationStatus {
+  pending_payment
+  active
+  dropped
+}
+
+enum JudgeApplicationStatus {
+  pending
+  approved
+  rejected
+}
+
+enum RoundPhase {
+  swiss
+  top_cut
+}
+
+enum RoundStatus {
+  pending
+  active
+  finished
+}
+
+enum MatchStatus {
+  pending
+  active
+  awaiting_confirmation
+  disputed
+  finished
+  bye
+  forfeit_a
+  forfeit_b
+  forfeit_both
+}
+
+enum ReportResult {
+  win
+  loss
+  draw
+}
+
+enum MatchOutcome {
+  a_wins
+  b_wins
+  draw
+  bye
+  forfeit_a
+  forfeit_b
+  forfeit_both
+}
+
+enum JudgeCallStatus {
+  open
+  in_progress
+  resolved
+}
+
+enum PaymentStatus {
+  created
+  completed
+  failed
+  cancelled
+  pending
+  refunded
+}
+
+enum WebhookProcessedStatus {
+  completed
+  failed
+  cancelled
+  ignored
+  no_payment
+}
+
+// ---------- Models ----------
+
+model User {
+  id              Int       @id @default(autoincrement())
+  name            String
+  email           String    @unique
+  emailVerifiedAt DateTime? @map("email_verified_at")
+  password        String
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  roles                UserRole[]
+  tournamentsAsAdmin   Tournament[]              @relation("TournamentAdmin")
+  registrations        TournamentRegistration[]
+  judgeApplications    JudgeApplication[]        @relation("JudgeApplicant")
+  judgeDecisions       JudgeApplication[]        @relation("JudgeDecider")
+  decklists            Decklist[]
+  matchesAsA           Match[]                   @relation("MatchPlayerA")
+  matchesAsB           Match[]                   @relation("MatchPlayerB")
+  matchReports         MatchReport[]
+  matchResultsWon      MatchResult[]             @relation("MatchWinner")
+  matchResultsResolved MatchResult[]             @relation("MatchResolver")
+  judgeCallsCreated    JudgeCall[]               @relation("JudgeCallCreator")
+  judgeCallsAssigned   JudgeCall[]               @relation("JudgeCallAssignee")
+  judgeMessages        JudgeMessage[]
+  payments             Payment[]
+  auditLogs            AuditLog[]
+
+  @@map("users")
+}
+
+model Role {
+  id    Int        @id @default(autoincrement())
+  name  RoleName   @unique
+  users UserRole[]
+
+  @@map("roles")
+}
+
+model UserRole {
+  userId Int @map("user_id")
+  roleId Int @map("role_id")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+  @@map("user_roles")
+}
+
+/// Soft deletes via deletedAt.
+model Tournament {
+  id               Int              @id @default(autoincrement())
+  publicId         String           @unique @map("public_id") // ULID, public realtime channel
+  slug             String           @unique
+  adminId          Int              @map("admin_id")
+  name             String
+  description      String?
+  startAt          DateTime         @map("start_at")
+  status           TournamentStatus @default(draft)
+  maxPlayers       Int              @map("max_players")
+  swissRounds      Int              @map("swiss_rounds")
+  roundTimeMinutes Int              @map("round_time_minutes")
+  checkinMinutes   Int              @map("checkin_minutes")
+  swissBo          Int              @map("swiss_bo") // 1 | 3
+  topCutBo         Int              @map("top_cut_bo") // 1 | 3
+  topCutSize       Int              @map("top_cut_size") // 0,4,8,16,32,64
+  feeAmount        Int              @default(0) @map("fee_amount") // cents; 0 = free
+  feeCurrency      String           @default("EUR") @map("fee_currency") @db.Char(3)
+  paypalAccount    String?          @map("paypal_account")
+  currentRoundId   Int?             @map("current_round_id")
+  pairingSeed      String           @map("pairing_seed") // 32 random chars, fixed at creation
+  deletedAt        DateTime?        @map("deleted_at")
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
+
+  admin             User                     @relation("TournamentAdmin", fields: [adminId], references: [id], onDelete: Cascade)
+  currentRound      Round?                   @relation("TournamentCurrentRound", fields: [currentRoundId], references: [id], onDelete: SetNull)
+  rounds            Round[]                  @relation("TournamentRounds")
+  registrations     TournamentRegistration[]
+  judgeApplications JudgeApplication[]
+  decklists         Decklist[]
+  pairingHistory    PairingHistory[]
+  judgeCalls        JudgeCall[]
+  payments          Payment[]
+
+  @@map("tournaments")
+}
+
+model TournamentRegistration {
+  id                  Int                @id @default(autoincrement())
+  tournamentId        Int                @map("tournament_id")
+  userId              Int                @map("user_id")
+  status              RegistrationStatus
+  fullName            String             @map("full_name")
+  tcgLiveUsername     String             @map("tcg_live_username")
+  email               String
+  phone               String?
+  registeredAt        DateTime           @default(now()) @map("registered_at")
+  droppedAt           DateTime?          @map("dropped_at")
+  droppedAfterRoundId Int?               @map("dropped_after_round_id")
+  createdAt           DateTime           @default(now()) @map("created_at")
+  updatedAt           DateTime           @updatedAt @map("updated_at")
+
+  tournament        Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  user              User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  droppedAfterRound Round?     @relation(fields: [droppedAfterRoundId], references: [id], onDelete: SetNull)
+  payments          Payment[]
+
+  @@unique([tournamentId, userId])
+  @@index([tournamentId, status])
+  @@map("tournament_registrations")
+}
+
+model JudgeApplication {
+  id           Int                    @id @default(autoincrement())
+  tournamentId Int                    @map("tournament_id")
+  userId       Int                    @map("user_id")
+  status       JudgeApplicationStatus @default(pending)
+  appliedAt    DateTime               @default(now()) @map("applied_at")
+  decidedAt    DateTime?              @map("decided_at")
+  decidedBy    Int?                   @map("decided_by")
+  createdAt    DateTime               @default(now()) @map("created_at")
+  updatedAt    DateTime               @updatedAt @map("updated_at")
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  user       User       @relation("JudgeApplicant", fields: [userId], references: [id], onDelete: Cascade)
+  decider    User?      @relation("JudgeDecider", fields: [decidedBy], references: [id], onDelete: SetNull)
+
+  @@unique([tournamentId, userId])
+  @@map("judge_applications")
+}
+
+model Decklist {
+  id           Int       @id @default(autoincrement())
+  tournamentId Int       @map("tournament_id")
+  userId       Int       @map("user_id")
+  rawText      String    @map("raw_text")
+  parsedCards  Json      @map("parsed_cards")
+  submittedAt  DateTime  @default(now()) @map("submitted_at")
+  lockedAt     DateTime? @map("locked_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tournamentId, userId])
+  @@map("decklists")
+}
+
+model Round {
+  id           Int         @id @default(autoincrement())
+  tournamentId Int         @map("tournament_id")
+  roundNumber  Int         @map("round_number") @db.SmallInt
+  phase        RoundPhase
+  startedAt    DateTime?   @map("started_at")
+  endsAt       DateTime?   @map("ends_at") // always NULL in top cut
+  closedAt     DateTime?   @map("closed_at")
+  status       RoundStatus @default(pending)
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+
+  tournament          Tournament               @relation("TournamentRounds", fields: [tournamentId], references: [id], onDelete: Cascade)
+  currentOfTournament Tournament[]             @relation("TournamentCurrentRound")
+  matches             Match[]
+  pairingHistory      PairingHistory[]
+  droppedRegistrations TournamentRegistration[]
+
+  @@unique([tournamentId, roundNumber])
+  @@index([tournamentId, status])
+  @@map("rounds")
+}
+
+model Match {
+  id              Int         @id @default(autoincrement())
+  roundId         Int         @map("round_id")
+  tableNumber     Int         @map("table_number") @db.SmallInt
+  playerAId       Int         @map("player_a_id")
+  playerBId       Int?        @map("player_b_id") // NULL = bye
+  status          MatchStatus @default(pending)
+  isBye           Boolean     @default(false) @map("is_bye")
+  checkInAAt      DateTime?   @map("check_in_a_at")
+  checkInBAt      DateTime?   @map("check_in_b_at")
+  finishedAt      DateTime?   @map("finished_at")
+  bracketPosition Int?        @map("bracket_position") @db.SmallInt // top cut only
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  round      Round         @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  playerA    User          @relation("MatchPlayerA", fields: [playerAId], references: [id], onDelete: Cascade)
+  playerB    User?         @relation("MatchPlayerB", fields: [playerBId], references: [id], onDelete: Cascade)
+  reports    MatchReport[]
+  result     MatchResult?
+  judgeCalls JudgeCall[]
+
+  @@unique([roundId, tableNumber])
+  @@index([roundId, status])
+  @@map("matches")
+}
+
+/// Append-only: no updated_at.
+model MatchReport {
+  id         Int          @id @default(autoincrement())
+  matchId    Int          @map("match_id")
+  reporterId Int          @map("reporter_id")
+  result     ReportResult // relative to the reporter
+  score      String? // free text, e.g. "2-1"
+  reportedAt DateTime     @default(now()) @map("reported_at")
+  createdAt  DateTime     @default(now()) @map("created_at")
+
+  match    Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  reporter User  @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+
+  @@unique([matchId, reporterId])
+  @@map("match_reports")
+}
+
+/// One per match.
+model MatchResult {
+  id           Int          @id @default(autoincrement())
+  matchId      Int          @unique @map("match_id")
+  result       MatchOutcome
+  winnerId     Int?         @map("winner_id")
+  score        String?
+  resolvedById Int?         @map("resolved_by") // NULL = automatic/system
+  resolvedAt   DateTime     @default(now()) @map("resolved_at")
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+
+  match      Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  winner     User? @relation("MatchWinner", fields: [winnerId], references: [id], onDelete: SetNull)
+  resolvedBy User? @relation("MatchResolver", fields: [resolvedById], references: [id], onDelete: SetNull)
+
+  @@map("match_results")
+}
+
+/// Always inserted normalized low < high. Swiss (and real pairings) only.
+model PairingHistory {
+  id           Int      @id @default(autoincrement())
+  tournamentId Int      @map("tournament_id")
+  playerLowId  Int      @map("player_low_id")
+  playerHighId Int      @map("player_high_id")
+  roundId      Int      @map("round_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  round      Round      @relation(fields: [roundId], references: [id], onDelete: Cascade)
+
+  @@unique([tournamentId, playerLowId, playerHighId])
+  @@map("pairing_history")
+}
+
+model JudgeCall {
+  id              Int             @id @default(autoincrement())
+  tournamentId    Int             @map("tournament_id")
+  matchId         Int             @map("match_id")
+  createdById     Int             @map("created_by")
+  assignedJudgeId Int?            @map("assigned_judge_id")
+  status          JudgeCallStatus @default(open)
+  resolvedAt      DateTime?       @map("resolved_at")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+
+  tournament    Tournament     @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  match         Match          @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  createdBy     User           @relation("JudgeCallCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  assignedJudge User?          @relation("JudgeCallAssignee", fields: [assignedJudgeId], references: [id], onDelete: SetNull)
+  messages      JudgeMessage[]
+
+  @@index([tournamentId, status])
+  @@map("judge_calls")
+}
+
+model JudgeMessage {
+  id          Int      @id @default(autoincrement())
+  judgeCallId Int      @map("judge_call_id")
+  senderId    Int      @map("sender_id")
+  message     String // max 2000, validated server-side
+  sentAt      DateTime @default(now()) @map("sent_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  judgeCall JudgeCall @relation(fields: [judgeCallId], references: [id], onDelete: Cascade)
+  sender    User      @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([judgeCallId])
+  @@map("judge_messages")
+}
+
+model Payment {
+  id              Int           @id @default(autoincrement())
+  tournamentId    Int           @map("tournament_id")
+  userId          Int           @map("user_id")
+  // SetNull (not cascade): a denied/voided payment deletes its registration but
+  // the payment row must survive as financial record (see DECISIONS.md).
+  registrationId  Int?          @map("registration_id")
+  paypalOrderId   String        @unique @map("paypal_order_id")
+  paypalCaptureId String?       @map("paypal_capture_id")
+  amount          Int // cents
+  currency        String        @db.Char(3)
+  status          PaymentStatus @default(created)
+  idempotencyKey  String        @default(uuid()) @map("idempotency_key") @db.Uuid
+  completedAt     DateTime?     @map("completed_at")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  tournament   Tournament              @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  user         User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  registration TournamentRegistration? @relation(fields: [registrationId], references: [id], onDelete: SetNull)
+
+  @@map("payments")
+}
+
+model PaypalWebhookEvent {
+  id              Int                     @id @default(autoincrement())
+  paypalEventId   String                  @unique @map("paypal_event_id")
+  eventType       String                  @map("event_type")
+  payload         Json
+  receivedAt      DateTime                @default(now()) @map("received_at")
+  processedAt     DateTime?               @map("processed_at")
+  processedStatus WebhookProcessedStatus? @map("processed_status")
+  createdAt       DateTime                @default(now()) @map("created_at")
+  updatedAt       DateTime                @updatedAt @map("updated_at")
+
+  @@map("paypal_webhook_events")
+}
+
+/// No updated_at.
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  actorId    Int?     @map("actor_id") // NULL = system
+  action     String
+  targetType String?  @map("target_type")
+  targetId   Int?     @map("target_id")
+  payload    Json?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([targetType, targetId])
+  @@index([action])
+  @@map("audit_logs")
+}
+
+/// Single-use password reset tokens (60 min expiry).
+model PasswordResetToken {
+  id        Int       @id @default(autoincrement())
+  email     String
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  @@index([email])
+  @@map("password_reset_tokens")
+}

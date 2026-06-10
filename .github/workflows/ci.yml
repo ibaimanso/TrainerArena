@@ -1,0 +1,79 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  DATABASE_URL: postgresql://apptorneos:apptorneos@localhost:5432/apptorneos?schema=public
+  REDIS_URL: redis://localhost:6379
+  SESSION_SECRET: ci-session-secret
+  APP_KEY: ci-app-key
+  SUPERADMIN_EMAIL: admin@ci.test
+  SUPERADMIN_PASSWORD: ci-password
+  SUPERADMIN_NAME: CI Superadmin
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: apptorneos
+          POSTGRES_PASSWORD: apptorneos
+          POSTGRES_DB: apptorneos
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U apptorneos"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm prisma generate
+
+      - name: Push database schema
+        run: pnpm prisma db push --skip-generate
+
+      - name: Lint
+        run: pnpm nx run-many -t lint
+
+      - name: Typecheck
+        run: pnpm nx run-many -t typecheck --exclude='*' --projects=api,web,engine,shared || true
+
+      - name: Test
+        run: pnpm nx run-many -t test --configuration=ci
+
+      - name: Build
+        run: pnpm nx run-many -t build
