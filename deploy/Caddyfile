@@ -1,0 +1,23 @@
+# Trainer Arena — reverse proxy with automatic HTTPS (Let's Encrypt).
+# DOMAIN comes from the compose environment.
+
+{$DOMAIN} {
+	encode gzip zstd
+
+	# API (NestJS) + health endpoints
+	@api path /api/* /health /ready
+	handle @api {
+		reverse_proxy api:3000
+	}
+
+	# WebSockets (Soketi, Pusher protocol)
+	@ws path /app/* /apps/*
+	handle @ws {
+		reverse_proxy soketi:6001
+	}
+
+	# Everything else: Angular SSR
+	handle {
+		reverse_proxy web:4000
+	}
+}

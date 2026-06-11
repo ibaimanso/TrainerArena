@@ -206,9 +206,14 @@
         </div>
       </div>
 
-      <div class="mt-10 flex flex-wrap items-center justify-between gap-2 border-t border-stone-200 pt-6 text-xs text-stone-400 dark:border-stone-800 dark:text-stone-500">
+      <div class="mt-10 flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-t border-stone-200 pt-6 text-xs text-stone-400 dark:border-stone-800 dark:text-stone-500">
         <p>© 2026 Trainer Arena. Todos los derechos reservados.</p>
-        <p>Pokémon y Pokémon TCG son marcas de sus respectivos propietarios. Trainer Arena no está afiliada.</p>
+        <nav aria-label="Enlaces legales" class="flex flex-wrap items-center gap-x-4 gap-y-1">
+          <a routerLink="/privacidad" class="hover:text-stone-700 dark:hover:text-stone-300">Privacidad</a>
+          <a routerLink="/terminos" class="hover:text-stone-700 dark:hover:text-stone-300">Términos</a>
+          <a routerLink="/aviso-legal" class="hover:text-stone-700 dark:hover:text-stone-300">Aviso legal</a>
+        </nav>
+        <p class="w-full sm:w-auto">Pokémon y Pokémon TCG son marcas de sus respectivos propietarios. Trainer Arena no está afiliada.</p>
       </div>
     </div>
   </footer>

@@ -164,6 +164,21 @@ export const appRoutes: Route[] = [
     title: 'Crear torneo — Trainer Arena',
   },
   {
+    path: 'privacidad',
+    loadComponent: () => import('./features/legal/privacy.page'),
+    title: 'Política de privacidad — Trainer Arena',
+  },
+  {
+    path: 'terminos',
+    loadComponent: () => import('./features/legal/terms.page'),
+    title: 'Términos de servicio — Trainer Arena',
+  },
+  {
+    path: 'aviso-legal',
+    loadComponent: () => import('./features/legal/legal-notice.page'),
+    title: 'Aviso legal — Trainer Arena',
+  },
+  {
     path: 'superadmin/usuarios',
     canActivate: [superadminGuard],
     loadComponent: () => import('./features/superadmin/users.page'),
