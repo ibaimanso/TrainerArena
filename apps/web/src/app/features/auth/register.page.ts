@@ -8,35 +8,38 @@ import { AuthService } from '../../core/auth.service';
   imports: [ReactiveFormsModule, RouterLink],
   template: `
     <div class="mx-auto max-w-sm">
-      <h1 class="mb-6 text-2xl font-bold">Crear cuenta</h1>
+      <h1 class="page-title mb-2 text-center">Crear cuenta</h1>
+      <p class="mb-6 text-center text-sm text-stone-500 dark:text-stone-400">
+        Crea tu cuenta para inscribirte y jugar tus torneos.
+      </p>
 
-      <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-4 rounded-lg bg-white p-6 shadow">
+      <form [formGroup]="form" (ngSubmit)="submit()" class="card space-y-5">
         @if (error()) {
-          <p class="rounded bg-red-50 px-3 py-2 text-sm text-red-700">{{ error() }}</p>
+          <p class="alert-error" role="alert">{{ error() }}</p>
         }
         <div>
-          <label for="name" class="mb-1 block text-sm font-medium">Nombre</label>
+          <label for="name" class="label">Nombre</label>
           <input id="name" type="text" formControlName="name" autocomplete="name" maxlength="120"
-                 class="w-full rounded border border-zinc-300 px-3 py-2 focus:border-indigo-500 focus:outline-none" />
+                 required class="input" placeholder="Tu nombre" />
+          <p class="hint">Así te verán tus rivales en los emparejamientos.</p>
         </div>
         <div>
-          <label for="email" class="mb-1 block text-sm font-medium">Email</label>
+          <label for="email" class="label">Email</label>
           <input id="email" type="email" formControlName="email" autocomplete="email"
-                 class="w-full rounded border border-zinc-300 px-3 py-2 focus:border-indigo-500 focus:outline-none" />
+                 required class="input" placeholder="tu@email.com" />
         </div>
         <div>
-          <label for="password" class="mb-1 block text-sm font-medium">Contraseña</label>
+          <label for="password" class="label">Contraseña</label>
           <input id="password" type="password" formControlName="password" autocomplete="new-password"
-                 class="w-full rounded border border-zinc-300 px-3 py-2 focus:border-indigo-500 focus:outline-none" />
-          <p class="mt-1 text-xs text-zinc-500">Mínimo 8 caracteres.</p>
+                 required class="input" />
+          <p class="hint">Mínimo 8 caracteres.</p>
         </div>
-        <button type="submit" [disabled]="form.invalid || loading()"
-                class="w-full rounded bg-indigo-600 px-4 py-2 font-semibold text-white hover:bg-indigo-500 disabled:opacity-50">
+        <button type="submit" [disabled]="form.invalid || loading()" class="btn-primary w-full">
           {{ loading() ? 'Creando cuenta…' : 'Crear cuenta' }}
         </button>
-        <p class="text-sm">
+        <p class="border-t border-stone-100 dark:border-stone-800 pt-4 text-center text-sm text-stone-500 dark:text-stone-400">
           ¿Ya tienes cuenta?
-          <a routerLink="/login" class="text-indigo-600 hover:underline">Inicia sesión</a>
+          <a routerLink="/login" class="link">Inicia sesión</a>
         </p>
       </form>
     </div>

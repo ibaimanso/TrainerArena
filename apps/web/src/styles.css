@@ -2,4 +2,211 @@
 @tailwind components;
 @tailwind utilities;
 
-/* You can add global styles to this file, and also import other style files */
+/*
+ * Trainer Arena design system — premium utilitarian minimalism.
+ * Canvas: warm off-white (#FAFAF9); surfaces: white with 1px stone borders;
+ * text: warm charcoal (never pure black). Color is scarce: near-black for
+ * primary actions, indigo-600 ONLY as interactive accent (links, focus,
+ * active nav), muted pastels for semantic states, amber reserved for the
+ * brand spark. No gradients, no heavy shadows (max 0.04 opacity, diffuse).
+ * Motion: strong ease-out, < 250ms, transform/opacity only, press feedback.
+ */
+
+:root {
+  --ease-out-strong: cubic-bezier(0.16, 1, 0.3, 1);
+  --shadow-rest: 0 1px 2px rgba(28, 25, 23, 0.03);
+  --shadow-hover: 0 2px 8px rgba(28, 25, 23, 0.05);
+}
+
+@layer base {
+  html {
+    @apply antialiased;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-[#FAFAF9] text-stone-800 dark:bg-[#0C0A09] dark:text-stone-200;
+  }
+
+  /* Consistent, high-visibility keyboard focus everywhere. */
+  :focus-visible {
+    @apply outline-none ring-2 ring-indigo-500 ring-offset-2 ring-offset-[#FAFAF9] dark:ring-indigo-400 dark:ring-offset-[#0C0A09];
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  /* ---------- Buttons ---------- */
+  /* Near-black primary, quiet secondaries; press feedback on everything. */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
+    transition:
+      transform 160ms var(--ease-out-strong),
+      background-color 150ms ease,
+      border-color 150ms ease,
+      color 150ms ease;
+  }
+  .btn-primary {
+    @apply btn bg-stone-900 text-white hover:bg-stone-700 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-white;
+  }
+  .btn-secondary {
+    @apply btn border border-stone-300 bg-white text-stone-700 hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-200 dark:hover:bg-stone-800;
+  }
+  .btn-success {
+    @apply btn bg-green-700 text-white hover:bg-green-600;
+  }
+  .btn-warning {
+    @apply btn bg-amber-600 text-white hover:bg-amber-500;
+  }
+  .btn-danger {
+    @apply btn bg-red-600 text-white hover:bg-red-500;
+  }
+  .btn-danger-outline {
+    @apply btn border border-red-200 bg-white text-red-700 hover:bg-red-50 dark:border-red-900 dark:bg-stone-900 dark:text-red-400 dark:hover:bg-red-950/40;
+  }
+  .btn-ghost {
+    @apply btn text-stone-700 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800;
+  }
+  .btn-sm {
+    @apply px-3 py-1.5 text-xs;
+  }
+  .btn-lg {
+    @apply px-5 py-3 text-base;
+  }
+
+  /* ---------- Forms ---------- */
+  .label {
+    @apply mb-1.5 block text-sm font-medium text-stone-700 dark:text-stone-300;
+  }
+  .input {
+    @apply block w-full rounded-md border border-stone-300 bg-white px-3 py-2.5 text-sm text-stone-900 transition-colors placeholder:text-stone-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100 disabled:bg-stone-50 disabled:text-stone-500 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100 dark:placeholder:text-stone-500 dark:focus:border-indigo-400 dark:focus:ring-indigo-950 dark:disabled:bg-stone-800 dark:disabled:text-stone-400;
+  }
+  .hint {
+    @apply mt-1.5 text-xs leading-relaxed text-stone-500 dark:text-stone-400;
+  }
+  .field-error {
+    @apply mt-1.5 text-xs font-medium text-red-700 dark:text-red-400;
+  }
+
+  /* ---------- Surfaces (1px border, whisper-quiet shadow) ---------- */
+  .card {
+    @apply rounded-xl border border-stone-200 bg-white p-6 dark:border-stone-800 dark:bg-stone-900;
+    box-shadow: var(--shadow-rest);
+  }
+  .card-hover {
+    @apply card hover:border-stone-300 dark:hover:border-stone-700;
+    transition:
+      box-shadow 200ms ease,
+      border-color 200ms ease;
+  }
+  .card-hover:hover {
+    box-shadow: var(--shadow-hover);
+  }
+
+  /* ---------- Alerts (pale surface + dark text, never color alone) ---------- */
+  .alert {
+    @apply rounded-lg border px-4 py-3 text-sm leading-relaxed;
+  }
+  .alert-error {
+    @apply alert border-red-100 bg-red-50 text-red-900 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200;
+  }
+  .alert-success {
+    @apply alert border-green-100 bg-green-50 text-green-900 dark:border-green-900 dark:bg-green-950/40 dark:text-green-200;
+  }
+  .alert-warning {
+    @apply alert border-amber-100 bg-amber-50 text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200;
+  }
+  .alert-info {
+    @apply alert border-indigo-100 bg-indigo-50 text-indigo-900 dark:border-indigo-900 dark:bg-indigo-950/40 dark:text-indigo-200;
+  }
+
+  /* ---------- Badges (small caps, muted pastel) ---------- */
+  .badge {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-medium uppercase tracking-wide;
+  }
+  .badge-neutral {
+    @apply badge bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-300;
+  }
+  .badge-success {
+    @apply badge bg-green-50 text-green-800 dark:bg-green-950/50 dark:text-green-300;
+  }
+  .badge-warning {
+    @apply badge bg-amber-50 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300;
+  }
+  .badge-danger {
+    @apply badge bg-red-50 text-red-800 dark:bg-red-950/50 dark:text-red-300;
+  }
+  .badge-brand {
+    @apply badge bg-indigo-50 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300;
+  }
+
+  /* ---------- Tables (flat, hairline rows) ---------- */
+  .table-wrap {
+    @apply overflow-x-auto rounded-xl border border-stone-200 bg-white dark:border-stone-800 dark:bg-stone-900;
+    box-shadow: var(--shadow-rest);
+  }
+  .table {
+    @apply w-full text-left text-sm;
+  }
+  .table thead {
+    @apply border-b border-stone-200 text-xs uppercase tracking-wider text-stone-500 dark:border-stone-800 dark:text-stone-400;
+  }
+  .table th {
+    @apply px-4 py-3 font-medium;
+  }
+  .table td {
+    @apply px-4 py-3;
+  }
+  .table tbody tr {
+    @apply border-b border-stone-100 last:border-b-0 dark:border-stone-800;
+  }
+  .table tbody tr:hover {
+    @apply bg-stone-50/60 dark:bg-stone-800/40;
+  }
+
+  /* ---------- Typography ---------- */
+  .page-title {
+    @apply text-2xl font-semibold tracking-tight text-stone-900 dark:text-stone-100;
+  }
+  .section-title {
+    @apply text-base font-semibold text-stone-900 dark:text-stone-100;
+  }
+  .link {
+    @apply font-medium text-indigo-600 underline-offset-2 hover:underline dark:text-indigo-400;
+  }
+
+  /* ---------- Motion ---------- */
+  /* Entry for conditionally-rendered panels; never starts from scale(0). */
+  .menu-enter {
+    opacity: 1;
+    transform: translateY(0);
+    transition:
+      opacity 180ms var(--ease-out-strong),
+      transform 180ms var(--ease-out-strong);
+  }
+
+  /* ---------- Empty / loading states ---------- */
+  .empty-state {
+    @apply card flex flex-col items-center gap-2 py-12 text-center text-sm text-stone-500 dark:text-stone-400;
+  }
+  .skeleton {
+    @apply animate-pulse rounded-md bg-stone-200/70 dark:bg-stone-800;
+  }
+}
+
+@starting-style {
+  .menu-enter {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}

@@ -8,23 +8,25 @@ import { PlayerService } from '../../core/player.service';
   imports: [RouterLink],
   template: `
     <div class="mx-auto max-w-md">
-      <h1 class="mb-6 text-2xl font-bold">Solicitar ser juez</h1>
-      <div class="space-y-4 rounded-lg bg-white p-6 shadow">
+      <h1 class="page-title mb-2 text-center">Solicitar ser juez</h1>
+      <p class="mb-6 text-center text-sm text-stone-500 dark:text-stone-400">
+        Confirma tu solicitud para arbitrar este torneo.
+      </p>
+
+      <div class="card space-y-5">
         @if (error()) {
-          <p class="rounded bg-red-50 px-3 py-2 text-sm text-red-700">{{ error() }}</p>
+          <p class="alert-error" role="alert">{{ error() }}</p>
         }
-        <p class="text-sm text-zinc-600">
+        <p class="text-sm leading-relaxed text-stone-600 dark:text-stone-400">
           Vas a solicitar arbitrar este torneo. El administrador revisará tu solicitud; si te
           aprueba tendrás acceso a las herramientas de juez (llamadas, disputas y decklists)
           de este torneo.
         </p>
         <div class="flex gap-2">
-          <button type="button" (click)="apply()" [disabled]="sending()"
-                  class="flex-1 rounded bg-indigo-600 px-4 py-2 font-semibold text-white hover:bg-indigo-500 disabled:opacity-50">
+          <button type="button" (click)="apply()" [disabled]="sending()" class="btn-primary flex-1">
             {{ sending() ? 'Enviando…' : 'Enviar solicitud' }}
           </button>
-          <a [routerLink]="['/torneo', slug()]"
-             class="rounded border border-zinc-300 px-4 py-2 text-center hover:bg-zinc-50">Cancelar</a>
+          <a [routerLink]="['/torneo', slug()]" class="btn-secondary">Cancelar</a>
         </div>
       </div>
     </div>

@@ -9,30 +9,47 @@ import { JudgeService, type QueueCall, type QueueDispute } from '../../core/judg
   imports: [RouterLink, DatePipe],
   template: `
     <div class="space-y-6">
-      <h1 class="text-2xl font-bold">Cola de juez</h1>
+      <div>
+        <h1 class="page-title">Cola de juez</h1>
+        <p class="mt-1 text-sm text-stone-500 dark:text-stone-400">
+          Llamadas y disputas pendientes. La lista se actualiza automáticamente.
+        </p>
+      </div>
 
       @if (error()) {
-        <p class="rounded bg-red-50 px-3 py-2 text-sm text-red-700">{{ error() }}</p>
+        <p class="alert-error" role="alert">{{ error() }}</p>
       }
 
-      <section>
-        <h2 class="mb-2 font-semibold">Disputas</h2>
+      <section aria-labelledby="titulo-disputas">
+        <h2 id="titulo-disputas" class="section-title mb-3">Disputas</h2>
         @if (disputes().length === 0) {
-          <p class="rounded-lg bg-white p-4 text-sm text-zinc-500 shadow">No hay disputas pendientes.</p>
+          <div class="empty-state">
+            <svg class="h-10 w-10 text-stone-300 dark:text-stone-600" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="9" />
+              <path d="m8.5 12.5 2.5 2.5 4.5-5" />
+            </svg>
+            <p>No hay disputas pendientes.</p>
+            <p class="text-xs text-stone-400 dark:text-stone-500">Si dos jugadores reportan resultados distintos, aparecerán aquí.</p>
+          </div>
         } @else {
-          <div class="space-y-2">
+          <div class="space-y-3">
             @for (d of disputes(); track d.matchId) {
-              <div class="flex flex-wrap items-center justify-between gap-2 rounded-lg border-l-4 border-red-500 bg-white p-4 shadow">
-                <div>
-                  <p class="text-sm font-semibold">
-                    {{ d.tournamentName }} · R{{ d.roundNumber }} · Mesa {{ d.tableNumber }}
-                  </p>
-                  <p class="text-xs text-zinc-500">
+              <div class="card flex flex-wrap items-center justify-between gap-3 border-l-4 border-l-red-500">
+                <div class="min-w-0">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <span class="badge-danger">Disputa</span>
+                    <p class="text-sm font-bold text-stone-900 dark:text-stone-100">
+                      Mesa {{ d.tableNumber }}
+                      <span class="font-medium text-stone-500 dark:text-stone-400">· {{ d.tournamentName }} · Ronda {{ d.roundNumber }}</span>
+                    </p>
+                  </div>
+                  <p class="mt-1.5 text-sm text-stone-500 dark:text-stone-400">
                     {{ d.playerA.name }} vs {{ d.playerB?.name ?? '—' }}
                   </p>
                 </div>
-                <a [routerLink]="['/juez/disputa', d.matchId]"
-                   class="rounded bg-red-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-red-500">
+                <a [routerLink]="['/juez/disputa', d.matchId]" class="btn-danger"
+                   [attr.aria-label]="'Resolver disputa de la mesa ' + d.tableNumber + ' de ' + d.tournamentName">
                   Resolver
                 </a>
               </div>
@@ -41,33 +58,51 @@ import { JudgeService, type QueueCall, type QueueDispute } from '../../core/judg
         }
       </section>
 
-      <section>
-        <h2 class="mb-2 font-semibold">Llamadas a juez</h2>
+      <section aria-labelledby="titulo-llamadas">
+        <h2 id="titulo-llamadas" class="section-title mb-3">Llamadas a juez</h2>
         @if (calls().length === 0) {
-          <p class="rounded-lg bg-white p-4 text-sm text-zinc-500 shadow">No hay llamadas abiertas.</p>
+          <div class="empty-state">
+            <svg class="h-10 w-10 text-stone-300 dark:text-stone-600" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="9" />
+              <path d="m8.5 12.5 2.5 2.5 4.5-5" />
+            </svg>
+            <p>No hay llamadas pendientes.</p>
+            <p class="text-xs text-stone-400 dark:text-stone-500">Todo en orden: las nuevas llamadas aparecerán aquí al instante.</p>
+          </div>
         } @else {
-          <div class="space-y-2">
+          <div class="space-y-3">
             @for (c of calls(); track c.id) {
-              <div class="flex flex-wrap items-center justify-between gap-2 rounded-lg border-l-4 bg-white p-4 shadow"
-                   [class]="c.status === 'open' ? 'border-amber-500' : 'border-indigo-500'">
-                <div>
-                  <p class="text-sm font-semibold">
-                    {{ c.tournamentName }} · Mesa {{ c.tableNumber }}
-                  </p>
-                  <p class="text-xs text-zinc-500">
+              <div class="card flex flex-wrap items-center justify-between gap-3 border-l-4"
+                   [class]="c.status === 'open' ? 'border-l-amber-400' : 'border-l-stone-400'">
+                <div class="min-w-0">
+                  <div class="flex flex-wrap items-center gap-2">
+                    @if (c.status === 'open') {
+                      <span class="badge-warning">Abierta</span>
+                    } @else {
+                      <span class="badge-brand">En curso</span>
+                    }
+                    <p class="text-sm font-bold text-stone-900 dark:text-stone-100">
+                      Mesa {{ c.tableNumber }}
+                      <span class="font-medium text-stone-500 dark:text-stone-400">· {{ c.tournamentName }}</span>
+                    </p>
+                  </div>
+                  <p class="mt-1.5 text-sm text-stone-500 dark:text-stone-400">
                     Llamada de {{ c.createdBy.name }} · {{ c.createdAt | date: 'HH:mm' }}
                     @if (c.assignedJudge) { · Atiende: {{ c.assignedJudge.name }} }
                   </p>
                 </div>
-                <div class="flex gap-2">
+                <div class="flex flex-wrap gap-2">
                   @if (c.status === 'open') {
-                    <button type="button" (click)="take(c)"
-                            class="rounded bg-indigo-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-indigo-500">
+                    <button type="button" (click)="take(c)" class="btn-primary"
+                            [attr.aria-label]="'Atender la llamada de la mesa ' + c.tableNumber + ' de ' + c.tournamentName">
                       Atender
                     </button>
                   }
-                  <a [routerLink]="['/juez/call', c.id]"
-                     class="rounded border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50">Abrir</a>
+                  <a [routerLink]="['/juez/call', c.id]" class="btn-secondary"
+                     [attr.aria-label]="'Abrir la llamada de la mesa ' + c.tableNumber + ' de ' + c.tournamentName">
+                    Abrir
+                  </a>
                 </div>
               </div>
             }

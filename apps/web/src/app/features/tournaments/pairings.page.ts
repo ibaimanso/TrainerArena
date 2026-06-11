@@ -20,52 +20,69 @@ interface PairingRow {
 @Component({
   imports: [RouterLink, TournamentHeaderComponent],
   template: `
-    <div class="space-y-4">
+    <div class="space-y-6">
       <app-tournament-header [tournament]="tournament()" />
 
       @if (notFound()) {
-        <div class="rounded-lg bg-white p-8 text-center shadow">
-          <h1 class="text-xl font-bold">Ronda no encontrada</h1>
-          <a [routerLink]="['/torneo', slug()]" class="mt-3 inline-block text-indigo-600 hover:underline">
-            Volver al torneo
-          </a>
+        <div class="empty-state">
+          <svg class="h-10 w-10 text-stone-300 dark:text-stone-600" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="8" />
+            <path d="m21 21-4.3-4.3M8 11h6" />
+          </svg>
+          <h2 class="text-lg font-bold text-stone-900 dark:text-stone-100">Ronda no encontrada</h2>
+          <a [routerLink]="['/torneo', slug()]" class="btn-secondary mt-2">Volver al torneo</a>
         </div>
       } @else {
         @if (rounds().length > 0) {
-          <nav class="flex flex-wrap gap-1 rounded-lg bg-white p-2 shadow">
+          <nav class="flex flex-wrap gap-1 rounded-xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-800 p-1.5 shadow-sm"
+               aria-label="Rondas del torneo">
             @for (r of rounds(); track r.roundNumber) {
               <a [routerLink]="['/torneo', slug(), 'pareos', 'ronda', r.roundNumber]"
-                 class="rounded px-3 py-1.5 text-sm font-medium"
-                 [class]="r.roundNumber === roundNumber() ? 'bg-indigo-600 text-white' : 'hover:bg-indigo-50'">
+                 class="rounded-lg px-3 py-2 text-sm font-medium transition-colors"
+                 [class]="r.roundNumber === roundNumber()
+                   ? 'bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900'
+                   : 'text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800 hover:text-stone-900 dark:hover:text-stone-100'"
+                 [attr.aria-current]="r.roundNumber === roundNumber() ? 'page' : null">
                 R{{ r.roundNumber }}{{ r.phase === 'top_cut' ? ' (cut)' : '' }}
               </a>
             }
           </nav>
         }
 
-        <section class="overflow-x-auto rounded-lg bg-white shadow">
-          <table class="w-full text-left text-sm">
-            <thead class="border-b border-zinc-200 text-xs uppercase text-zinc-500">
-              <tr>
-                <th class="px-4 py-3">Mesa</th>
-                <th class="px-4 py-3">Jugador A</th>
-                <th class="px-4 py-3">Jugador B</th>
-                <th class="px-4 py-3">Resultado</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (m of matches(); track m.tableNumber) {
-                <tr class="border-b border-zinc-100">
-                  <td class="px-4 py-2 font-medium">{{ m.tableNumber }}</td>
-                  <td class="px-4 py-2">{{ m.playerA.name }}</td>
-                  <td class="px-4 py-2">{{ m.isBye ? 'BYE' : (m.playerB?.name ?? '—') }}</td>
-                  <td class="px-4 py-2">{{ resultLabel(m) }}</td>
+        <section aria-label="Pareos de la ronda">
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th scope="col">Mesa</th>
+                  <th scope="col">Jugador A</th>
+                  <th scope="col">Jugador B</th>
+                  <th scope="col">Resultado</th>
                 </tr>
-              } @empty {
-                <tr><td colspan="4" class="px-4 py-6 text-center text-zinc-500">Sin mesas.</td></tr>
-              }
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                @for (m of matches(); track m.tableNumber) {
+                  <tr>
+                    <td class="font-mono font-medium tabular-nums">{{ m.tableNumber }}</td>
+                    <td class="font-medium">{{ m.playerA.name }}</td>
+                    <td [class.text-stone-500 dark:text-stone-400]="m.isBye || !m.playerB" [class.font-medium]="!m.isBye && m.playerB">
+                      {{ m.isBye ? 'BYE' : (m.playerB?.name ?? '—') }}
+                    </td>
+                    <td>
+                      <span [class]="m.result === null
+                              ? (m.status === 'disputed' ? 'badge-warning' : 'badge-neutral')
+                              : 'badge-success'">
+                        {{ resultLabel(m) }}
+                      </span>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr><td colspan="4" class="py-8 text-center text-stone-500 dark:text-stone-400">Sin mesas en esta ronda.</td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
         </section>
       }
     </div>

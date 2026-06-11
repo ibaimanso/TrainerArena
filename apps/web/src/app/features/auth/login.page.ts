@@ -8,30 +8,37 @@ import { AuthService } from '../../core/auth.service';
   imports: [ReactiveFormsModule, RouterLink],
   template: `
     <div class="mx-auto max-w-sm">
-      <h1 class="mb-6 text-2xl font-bold">Iniciar sesión</h1>
+      <h1 class="page-title mb-2 text-center">Iniciar sesión</h1>
+      <p class="mb-6 text-center text-sm text-stone-500 dark:text-stone-400">
+        Accede para inscribirte y jugar tus torneos.
+      </p>
 
-      <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-4 rounded-lg bg-white p-6 shadow">
+      <form [formGroup]="form" (ngSubmit)="submit()" class="card space-y-5">
         @if (error()) {
-          <p class="rounded bg-red-50 px-3 py-2 text-sm text-red-700">{{ error() }}</p>
+          <p class="alert-error" role="alert">{{ error() }}</p>
         }
         <div>
-          <label for="email" class="mb-1 block text-sm font-medium">Email</label>
+          <label for="email" class="label">Email</label>
           <input id="email" type="email" formControlName="email" autocomplete="email"
-                 class="w-full rounded border border-zinc-300 px-3 py-2 focus:border-indigo-500 focus:outline-none" />
+                 required class="input" placeholder="tu@email.com" />
         </div>
         <div>
-          <label for="password" class="mb-1 block text-sm font-medium">Contraseña</label>
+          <div class="mb-1.5 flex items-center justify-between">
+            <label for="password" class="label mb-0">Contraseña</label>
+            <a routerLink="/recuperar-contrasena" class="link text-xs">
+              ¿La has olvidado?
+            </a>
+          </div>
           <input id="password" type="password" formControlName="password" autocomplete="current-password"
-                 class="w-full rounded border border-zinc-300 px-3 py-2 focus:border-indigo-500 focus:outline-none" />
+                 required class="input" />
         </div>
-        <button type="submit" [disabled]="form.invalid || loading()"
-                class="w-full rounded bg-indigo-600 px-4 py-2 font-semibold text-white hover:bg-indigo-500 disabled:opacity-50">
+        <button type="submit" [disabled]="form.invalid || loading()" class="btn-primary w-full">
           {{ loading() ? 'Entrando…' : 'Entrar' }}
         </button>
-        <div class="flex justify-between text-sm">
-          <a routerLink="/recuperar-contrasena" class="text-indigo-600 hover:underline">¿Olvidaste tu contraseña?</a>
-          <a routerLink="/registro" class="text-indigo-600 hover:underline">Crear cuenta</a>
-        </div>
+        <p class="border-t border-stone-100 dark:border-stone-800 pt-4 text-center text-sm text-stone-500 dark:text-stone-400">
+          ¿Aún no tienes cuenta?
+          <a routerLink="/registro" class="link">Crear cuenta</a>
+        </p>
       </form>
     </div>
   `,

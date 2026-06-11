@@ -14,35 +14,41 @@ import { RealtimeService } from '../../core/realtime.service';
   template: `
     <div class="space-y-3">
       @if (error()) {
-        <p class="rounded bg-red-50 px-3 py-2 text-sm text-red-700">{{ error() }}</p>
+        <p class="alert-error" role="alert">{{ error() }}</p>
       }
-      <div class="max-h-72 space-y-2 overflow-y-auto rounded border border-zinc-200 bg-zinc-50 p-3">
+      <div role="log" aria-label="Mensajes del chat" aria-live="polite"
+           class="max-h-72 space-y-2 overflow-y-auto rounded-xl border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-800/40 p-3">
         @for (m of messages(); track m.id) {
           <div [class]="m.sender.id === auth.user()?.id ? 'text-right' : 'text-left'">
-            <div class="inline-block max-w-[85%] rounded-lg px-3 py-2 text-sm"
-                 [class]="m.sender.id === auth.user()?.id ? 'bg-indigo-600 text-white' : 'bg-white shadow-sm'">
-              <p class="text-xs font-semibold opacity-75">{{ m.sender.name }}</p>
-              <p class="whitespace-pre-line">{{ m.message }}</p>
-              <p class="mt-0.5 text-[10px] opacity-60">{{ m.sentAt | date: 'HH:mm' }}</p>
+            <div class="inline-block max-w-[85%] rounded-xl px-3 py-2 text-left text-sm"
+                 [class]="m.sender.id === auth.user()?.id ? 'rounded-br-sm bg-indigo-600 text-white' : 'rounded-bl-sm bg-white dark:bg-stone-800 shadow-sm'">
+              <p class="text-xs font-semibold"
+                 [class]="m.sender.id === auth.user()?.id ? 'text-indigo-100' : 'text-stone-500 dark:text-stone-400'">
+                {{ m.sender.name }}
+              </p>
+              <p class="whitespace-pre-line leading-relaxed">{{ m.message }}</p>
+              <p class="mt-0.5 text-right text-[10px]"
+                 [class]="m.sender.id === auth.user()?.id ? 'text-indigo-200' : 'text-stone-400 dark:text-stone-500'">
+                {{ m.sentAt | date: 'HH:mm' }}
+              </p>
             </div>
           </div>
         } @empty {
-          <p class="text-center text-xs text-zinc-400">Sin mensajes todavía.</p>
+          <p class="py-6 text-center text-xs text-stone-400 dark:text-stone-500">Sin mensajes todavía. Escribe el primero.</p>
         }
       </div>
 
       @if (call()?.status === 'resolved') {
-        <p class="rounded bg-zinc-100 px-3 py-2 text-center text-xs text-zinc-500">
+        <p class="rounded-lg bg-stone-100 dark:bg-stone-800 px-3 py-2.5 text-center text-xs text-stone-500 dark:text-stone-400" role="status">
           Llamada resuelta — el chat es de solo lectura.
         </p>
       } @else {
-        <form (ngSubmit)="send()" class="flex gap-2">
+        <form (ngSubmit)="send()" class="flex items-start gap-2">
           <input type="text" [(ngModel)]="draft" name="draft" maxlength="2000"
-                 placeholder="Escribe un mensaje…"
-                 class="flex-1 rounded border border-zinc-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none" />
-          <button type="submit" [disabled]="!draft.trim() || sending()"
-                  class="rounded bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 disabled:opacity-50">
-            Enviar
+                 placeholder="Escribe un mensaje…" aria-label="Mensaje para el chat"
+                 class="input flex-1" />
+          <button type="submit" [disabled]="!draft.trim() || sending()" class="btn-primary shrink-0">
+            {{ sending() ? 'Enviando…' : 'Enviar' }}
           </button>
         </form>
       }

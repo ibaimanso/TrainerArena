@@ -15,105 +15,141 @@ import { TournamentHeaderComponent } from './tournament-header.component';
   imports: [RouterLink, TournamentHeaderComponent],
   template: `
     @if (notFound()) {
-      <div class="rounded-lg bg-white p-8 text-center shadow">
-        <h1 class="text-2xl font-bold">Torneo no encontrado</h1>
-        <p class="mt-2 text-sm text-zinc-500">El torneo no existe o ya no está disponible.</p>
-        <a routerLink="/" class="mt-4 inline-block text-indigo-600 hover:underline">Volver a los torneos</a>
+      <div class="empty-state">
+        <svg class="h-10 w-10 text-stone-300 dark:text-stone-600" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="8" />
+          <path d="m21 21-4.3-4.3M8 11h6" />
+        </svg>
+        <h1 class="text-lg font-bold text-stone-900 dark:text-stone-100">Torneo no encontrado</h1>
+        <p>El torneo no existe o ya no está disponible.</p>
+        <a routerLink="/" class="btn-secondary mt-2">Volver a los torneos</a>
       </div>
     } @else if (tournament(); as t) {
-      <div class="space-y-4">
+      <div class="space-y-6">
         <app-tournament-header [tournament]="t" />
 
-        <section class="rounded-lg bg-white p-6 shadow">
-          <h2 class="font-semibold">Formato</h2>
-          <dl class="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm sm:grid-cols-4">
-            <div>
-              <dt class="text-zinc-500">Rondas suizas</dt>
-              <dd class="font-medium">{{ t.swissRounds }} (BO{{ t.swissBo }})</dd>
+        <section class="card sm:p-6" aria-labelledby="titulo-formato">
+          <h2 id="titulo-formato" class="section-title">Formato</h2>
+          <dl class="mt-4 grid grid-cols-2 gap-4 text-sm lg:grid-cols-4">
+            <div class="flex items-start gap-2.5 rounded-lg bg-stone-50 dark:bg-stone-800/40 p-3">
+              <svg class="mt-0.5 h-5 w-5 shrink-0 text-stone-400 dark:text-stone-500" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M16 3h5v5M21 3l-7 7M8 21H3v-5M3 21l7-7" />
+              </svg>
+              <div>
+                <dt class="text-xs text-stone-500 dark:text-stone-400">Rondas suizas</dt>
+                <dd class="mt-0.5 font-semibold text-stone-900 dark:text-stone-100">{{ t.swissRounds }} (BO{{ t.swissBo }})</dd>
+              </div>
             </div>
-            <div>
-              <dt class="text-zinc-500">Top cut</dt>
-              <dd class="font-medium">
-                @if (t.topCutSize > 0) { Top {{ t.topCutSize }} (BO{{ t.topCutBo }}) } @else { Sin top cut }
-              </dd>
+            <div class="flex items-start gap-2.5 rounded-lg bg-stone-50 dark:bg-stone-800/40 p-3">
+              <svg class="mt-0.5 h-5 w-5 shrink-0 text-stone-400 dark:text-stone-500" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
+                <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
+                <path d="M4 22h16" />
+                <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" />
+                <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" />
+                <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" />
+              </svg>
+              <div>
+                <dt class="text-xs text-stone-500 dark:text-stone-400">Top cut</dt>
+                <dd class="mt-0.5 font-semibold text-stone-900 dark:text-stone-100">
+                  @if (t.topCutSize > 0) { Top {{ t.topCutSize }} (BO{{ t.topCutBo }}) } @else { Sin top cut }
+                </dd>
+              </div>
             </div>
-            <div>
-              <dt class="text-zinc-500">Tiempo por ronda</dt>
-              <dd class="font-medium">{{ t.roundTimeMinutes }} min</dd>
+            <div class="flex items-start gap-2.5 rounded-lg bg-stone-50 dark:bg-stone-800/40 p-3">
+              <svg class="mt-0.5 h-5 w-5 shrink-0 text-stone-400 dark:text-stone-500" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 6v6l4 2" />
+              </svg>
+              <div>
+                <dt class="text-xs text-stone-500 dark:text-stone-400">Tiempo por ronda</dt>
+                <dd class="mt-0.5 font-semibold text-stone-900 dark:text-stone-100">{{ t.roundTimeMinutes }} min</dd>
+              </div>
             </div>
-            <div>
-              <dt class="text-zinc-500">Check-in</dt>
-              <dd class="font-medium">{{ t.checkinMinutes }} min</dd>
+            <div class="flex items-start gap-2.5 rounded-lg bg-stone-50 dark:bg-stone-800/40 p-3">
+              <svg class="mt-0.5 h-5 w-5 shrink-0 text-stone-400 dark:text-stone-500" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M9 11l3 3L22 4" />
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+              </svg>
+              <div>
+                <dt class="text-xs text-stone-500 dark:text-stone-400">Check-in</dt>
+                <dd class="mt-0.5 font-semibold text-stone-900 dark:text-stone-100">{{ t.checkinMinutes }} min</dd>
+              </div>
             </div>
           </dl>
 
           @if (t.description) {
-            <h2 class="mt-6 font-semibold">Descripción</h2>
-            <p class="mt-2 whitespace-pre-line text-sm text-zinc-700">{{ t.description }}</p>
+            <h3 class="section-title mt-6">Descripción</h3>
+            <p class="mt-2 whitespace-pre-line text-sm leading-relaxed text-stone-700 dark:text-stone-300">{{ t.description }}</p>
           }
         </section>
 
-        <section class="rounded-lg bg-white p-6 shadow">
-          <h2 class="font-semibold">Inscripción</h2>
+        <section class="card sm:p-6" aria-labelledby="titulo-inscripcion">
+          <h2 id="titulo-inscripcion" class="section-title">Inscripción</h2>
           @if (viewer(); as v) {
-            <div class="mt-3 space-y-3 text-sm">
+            <div class="mt-4 space-y-4 text-sm">
               @if (!v.isAuthenticated) {
-                <p class="text-zinc-600">Necesitas una cuenta para inscribirte.</p>
+                <p class="text-stone-600 dark:text-stone-400">Necesitas una cuenta para inscribirte.</p>
                 <a [routerLink]="['/login']" [queryParams]="{ volver: '/torneo/' + t.slug }"
-                   class="inline-block rounded bg-indigo-600 px-4 py-2 font-semibold text-white hover:bg-indigo-500">
+                   class="btn-primary btn-lg">
                   Inicia sesión para inscribirte
                 </a>
               } @else if (!v.isVerified) {
-                <p class="text-zinc-600">Debes verificar tu email antes de inscribirte.</p>
-                <a routerLink="/verificar-email"
-                   class="inline-block rounded bg-amber-500 px-4 py-2 font-semibold text-white hover:bg-amber-400">
-                  Verificar email
-                </a>
+                <p class="alert-warning" role="status">Debes verificar tu email antes de inscribirte.</p>
+                <a routerLink="/verificar-email" class="btn-warning">Verificar email</a>
               } @else if (v.registrationStatus === 'active') {
-                <p class="rounded bg-green-50 px-3 py-2 text-green-800">Ya estás inscrito en este torneo.</p>
+                <p class="alert-success" role="status">Ya estás inscrito en este torneo.</p>
                 @if (dropError()) {
-                  <p class="rounded bg-red-50 px-3 py-2 text-red-700">{{ dropError() }}</p>
+                  <p class="alert-error" role="alert">{{ dropError() }}</p>
                 }
                 <div class="flex flex-wrap gap-2">
-                  <a [routerLink]="['/torneo', t.slug, 'mi-decklist']"
-                     class="rounded bg-indigo-600 px-4 py-2 font-semibold text-white hover:bg-indigo-500">Mi decklist</a>
-                  <a [routerLink]="['/torneo', t.slug, 'match-actual']"
-                     class="rounded border border-indigo-600 px-4 py-2 font-semibold text-indigo-600 hover:bg-indigo-50">Mi match</a>
-                  <button type="button" (click)="drop()" [disabled]="dropping()"
-                          class="rounded border border-red-300 px-4 py-2 font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50">
+                  <a [routerLink]="['/torneo', t.slug, 'mi-decklist']" class="btn-primary">Mi decklist</a>
+                  <a [routerLink]="['/torneo', t.slug, 'match-actual']" class="btn-secondary">Mi match</a>
+                  <button type="button" (click)="drop()" [disabled]="dropping()" class="btn-danger-outline">
                     {{ dropping() ? 'Procesando…' : 'Darme de baja' }}
                   </button>
                 </div>
               } @else if (v.registrationStatus === 'pending_payment') {
-                <p class="rounded bg-amber-50 px-3 py-2 text-amber-800">
+                <p class="alert-warning" role="status">
                   Tu inscripción está pendiente de pago.
                 </p>
               } @else if (v.registrationStatus === 'dropped') {
-                <p class="rounded bg-zinc-100 px-3 py-2 text-zinc-600">
+                <p class="alert-info" role="status">
                   Te diste de baja de este torneo.
                 </p>
               } @else if (v.isFull) {
-                <p class="rounded bg-red-50 px-3 py-2 text-red-700">Torneo lleno.</p>
+                <p class="alert-warning" role="status">Torneo lleno: no quedan plazas disponibles.</p>
               } @else if (v.canRegister) {
-                <a [routerLink]="['/torneo', t.slug, 'inscripcion']"
-                   class="inline-block rounded bg-indigo-600 px-4 py-2 font-semibold text-white hover:bg-indigo-500">
+                <a [routerLink]="['/torneo', t.slug, 'inscripcion']" class="btn-primary btn-lg">
                   Inscribirme
                 </a>
               } @else {
-                <p class="text-zinc-600">Las inscripciones no están abiertas.</p>
+                <p class="text-stone-600 dark:text-stone-400">Las inscripciones no están abiertas.</p>
               }
 
               @if (v.hasJudgeRole) {
-                <div class="border-t border-zinc-100 pt-3">
+                <div class="border-t border-stone-100 dark:border-stone-800 pt-4">
                   @if (v.judgeApplicationStatus === null && t.status !== 'finished' && t.status !== 'cancelled') {
-                    <a [routerLink]="['/torneo', t.slug, 'solicitar-juez']"
-                       class="text-indigo-600 hover:underline">Solicitar ser juez de este torneo</a>
+                    <a [routerLink]="['/torneo', t.slug, 'solicitar-juez']" class="link">
+                      Solicitar ser juez de este torneo
+                    </a>
                   } @else if (v.judgeApplicationStatus === 'pending') {
-                    <p class="text-zinc-600">Tu solicitud de juez está pendiente.</p>
+                    <p class="flex items-center gap-2 text-stone-600 dark:text-stone-400">
+                      <span class="badge-warning">Pendiente</span> Tu solicitud de juez está pendiente.
+                    </p>
                   } @else if (v.judgeApplicationStatus === 'approved') {
-                    <p class="text-green-700">Eres juez aprobado de este torneo.</p>
+                    <p class="flex items-center gap-2 text-stone-600 dark:text-stone-400">
+                      <span class="badge-success">Aprobada</span> Eres juez aprobado de este torneo.
+                    </p>
                   } @else if (v.judgeApplicationStatus === 'rejected') {
-                    <p class="text-zinc-600">Tu solicitud de juez fue rechazada.</p>
+                    <p class="flex items-center gap-2 text-stone-600 dark:text-stone-400">
+                      <span class="badge-neutral">Rechazada</span> Tu solicitud de juez fue rechazada.
+                    </p>
                   }
                 </div>
               }
@@ -122,7 +158,17 @@ import { TournamentHeaderComponent } from './tournament-header.component';
         </section>
       </div>
     } @else {
-      <p class="text-center text-sm text-zinc-500">Cargando torneo…</p>
+      <div class="space-y-6" aria-label="Cargando torneo">
+        <div class="card space-y-4 sm:p-6">
+          <div class="skeleton h-7 w-2/3"></div>
+          <div class="skeleton h-4 w-1/3"></div>
+          <div class="skeleton h-2 w-full"></div>
+        </div>
+        <div class="card space-y-3 sm:p-6">
+          <div class="skeleton h-5 w-1/4"></div>
+          <div class="skeleton h-16 w-full"></div>
+        </div>
+      </div>
     }
   `,
 })

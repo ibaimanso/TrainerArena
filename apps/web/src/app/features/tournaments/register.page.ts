@@ -10,40 +10,46 @@ import { PlayerService } from '../../core/player.service';
   imports: [ReactiveFormsModule, RouterLink],
   template: `
     <div class="mx-auto max-w-md">
-      <h1 class="mb-6 text-2xl font-bold">Inscripción</h1>
+      <h1 class="page-title mb-2 text-center">Inscripción al torneo</h1>
+      <p class="mb-6 text-center text-sm text-stone-500 dark:text-stone-400">
+        Completa tus datos de jugador para reservar tu plaza.
+      </p>
 
-      <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-4 rounded-lg bg-white p-6 shadow">
+      <form [formGroup]="form" (ngSubmit)="submit()" class="card space-y-5">
         @if (error()) {
-          <p class="rounded bg-red-50 px-3 py-2 text-sm text-red-700">{{ error() }}</p>
+          <p class="alert-error" role="alert">{{ error() }}</p>
         }
+        <p class="alert-info" role="status">
+          Si el torneo tiene cuota de inscripción, al confirmar te redirigiremos a PayPal
+          para completar el pago de forma segura.
+        </p>
         <div>
-          <label for="fullName" class="mb-1 block text-sm font-medium">Nombre completo</label>
+          <label for="fullName" class="label">Nombre completo</label>
           <input id="fullName" type="text" formControlName="fullName" maxlength="120"
-                 class="w-full rounded border border-zinc-300 px-3 py-2 focus:border-indigo-500 focus:outline-none" />
+                 required autocomplete="name" class="input" />
         </div>
         <div>
-          <label for="tcg" class="mb-1 block text-sm font-medium">Usuario de Pokémon TCG Live</label>
+          <label for="tcg" class="label">Usuario de Pokémon TCG Live</label>
           <input id="tcg" type="text" formControlName="tcgLiveUsername" maxlength="60"
-                 class="w-full rounded border border-zinc-300 px-3 py-2 focus:border-indigo-500 focus:outline-none" />
+                 required class="input" />
+          <p class="hint">Tus rivales te buscarán con este nombre dentro de TCG Live.</p>
         </div>
         <div>
-          <label for="email" class="mb-1 block text-sm font-medium">Email</label>
+          <label for="email" class="label">Email</label>
           <input id="email" type="email" formControlName="email"
-                 class="w-full rounded border border-zinc-300 px-3 py-2 focus:border-indigo-500 focus:outline-none" />
-          <p class="mt-1 text-xs text-zinc-500">Recibirás la confirmación en este email.</p>
+                 required autocomplete="email" class="input" />
+          <p class="hint">Recibirás la confirmación en este email.</p>
         </div>
         <div>
-          <label for="phone" class="mb-1 block text-sm font-medium">Teléfono (opcional)</label>
+          <label for="phone" class="label">Teléfono (opcional)</label>
           <input id="phone" type="tel" formControlName="phone" maxlength="30"
-                 class="w-full rounded border border-zinc-300 px-3 py-2 focus:border-indigo-500 focus:outline-none" />
+                 autocomplete="tel" class="input" />
         </div>
-        <div class="flex gap-2">
-          <button type="submit" [disabled]="form.invalid || saving()"
-                  class="flex-1 rounded bg-indigo-600 px-4 py-2 font-semibold text-white hover:bg-indigo-500 disabled:opacity-50">
+        <div class="flex gap-2 pt-1">
+          <button type="submit" [disabled]="form.invalid || saving()" class="btn-primary flex-1">
             {{ saving() ? 'Inscribiendo…' : 'Confirmar inscripción' }}
           </button>
-          <a [routerLink]="['/torneo', slug()]"
-             class="rounded border border-zinc-300 px-4 py-2 text-center hover:bg-zinc-50">Cancelar</a>
+          <a [routerLink]="['/torneo', slug()]" class="btn-secondary">Cancelar</a>
         </div>
       </form>
     </div>

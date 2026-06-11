@@ -8,33 +8,33 @@ import { AuthService } from '../../core/auth.service';
   imports: [ReactiveFormsModule, RouterLink],
   template: `
     <div class="mx-auto max-w-sm">
-      <h1 class="mb-6 text-2xl font-bold">Recuperar contraseña</h1>
+      <h1 class="page-title mb-2 text-center">Recuperar contraseña</h1>
+      <p class="mb-6 text-center text-sm text-stone-500 dark:text-stone-400">
+        Te enviaremos un enlace para restablecerla.
+      </p>
 
-      <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-4 rounded-lg bg-white p-6 shadow">
+      <form [formGroup]="form" (ngSubmit)="submit()" class="card space-y-5">
         @if (sent()) {
-          <p class="rounded bg-green-50 px-3 py-2 text-sm text-green-800">
+          <p class="alert-success" role="status">
             Si existe una cuenta con ese email, recibirás un enlace para restablecer la
             contraseña. El enlace caduca en 60 minutos.
           </p>
         } @else {
           @if (error()) {
-            <p class="rounded bg-red-50 px-3 py-2 text-sm text-red-700">{{ error() }}</p>
+            <p class="alert-error" role="alert">{{ error() }}</p>
           }
-          <p class="text-sm text-zinc-600">
-            Introduce tu email y te enviaremos un enlace para restablecer la contraseña.
-          </p>
           <div>
-            <label for="email" class="mb-1 block text-sm font-medium">Email</label>
+            <label for="email" class="label">Email</label>
             <input id="email" type="email" formControlName="email" autocomplete="email"
-                   class="w-full rounded border border-zinc-300 px-3 py-2 focus:border-indigo-500 focus:outline-none" />
+                   required class="input" placeholder="tu@email.com" />
+            <p class="hint">Introduce el email con el que te registraste.</p>
           </div>
-          <button type="submit" [disabled]="form.invalid || loading()"
-                  class="w-full rounded bg-indigo-600 px-4 py-2 font-semibold text-white hover:bg-indigo-500 disabled:opacity-50">
+          <button type="submit" [disabled]="form.invalid || loading()" class="btn-primary w-full">
             {{ loading() ? 'Enviando…' : 'Enviar enlace' }}
           </button>
         }
-        <p class="text-sm">
-          <a routerLink="/login" class="text-indigo-600 hover:underline">Volver a iniciar sesión</a>
+        <p class="border-t border-stone-100 dark:border-stone-800 pt-4 text-center text-sm text-stone-500 dark:text-stone-400">
+          <a routerLink="/login" class="link">Volver a iniciar sesión</a>
         </p>
       </form>
     </div>

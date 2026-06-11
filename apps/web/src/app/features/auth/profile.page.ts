@@ -8,75 +8,86 @@ import { AuthService } from '../../core/auth.service';
   imports: [ReactiveFormsModule],
   template: `
     <div class="mx-auto max-w-xl space-y-6">
-      <h1 class="text-2xl font-bold">Mi perfil</h1>
+      <div>
+        <h1 class="page-title">Mi perfil</h1>
+        <p class="mt-1 text-sm text-stone-500 dark:text-stone-400">Gestiona tus datos, tu contraseña y tu cuenta.</p>
+      </div>
 
-      <form [formGroup]="profileForm" (ngSubmit)="saveProfile()" class="space-y-4 rounded-lg bg-white p-6 shadow">
-        <h2 class="font-semibold">Datos de la cuenta</h2>
+      <form [formGroup]="profileForm" (ngSubmit)="saveProfile()"
+            class="card space-y-5" aria-labelledby="titulo-datos">
+        <h2 id="titulo-datos" class="section-title">Datos de la cuenta</h2>
         @if (profileMessage()) {
-          <p class="rounded bg-green-50 px-3 py-2 text-sm text-green-800">{{ profileMessage() }}</p>
+          <p class="alert-success" role="status">{{ profileMessage() }}</p>
         }
         @if (profileError()) {
-          <p class="rounded bg-red-50 px-3 py-2 text-sm text-red-700">{{ profileError() }}</p>
+          <p class="alert-error" role="alert">{{ profileError() }}</p>
         }
         <div>
-          <label for="name" class="mb-1 block text-sm font-medium">Nombre</label>
-          <input id="name" type="text" formControlName="name" maxlength="120"
-                 class="w-full rounded border border-zinc-300 px-3 py-2 focus:border-indigo-500 focus:outline-none" />
+          <label for="name" class="label">Nombre</label>
+          <input id="name" type="text" formControlName="name" autocomplete="name" maxlength="120"
+                 required class="input" />
+          <p class="hint">Así te verán tus rivales en los emparejamientos.</p>
         </div>
         <div>
-          <label for="email" class="mb-1 block text-sm font-medium">Email</label>
-          <input id="email" type="email" formControlName="email"
-                 class="w-full rounded border border-zinc-300 px-3 py-2 focus:border-indigo-500 focus:outline-none" />
-          <p class="mt-1 text-xs text-zinc-500">Si cambias el email tendrás que verificarlo de nuevo.</p>
+          <label for="email" class="label">Email</label>
+          <input id="email" type="email" formControlName="email" autocomplete="email"
+                 required class="input" />
+          <p class="hint">Si cambias el email tendrás que verificarlo de nuevo.</p>
         </div>
-        <button type="submit" [disabled]="profileForm.invalid || savingProfile()"
-                class="rounded bg-indigo-600 px-4 py-2 font-semibold text-white hover:bg-indigo-500 disabled:opacity-50">
-          Guardar cambios
-        </button>
+        <div class="flex justify-end">
+          <button type="submit" [disabled]="profileForm.invalid || savingProfile()" class="btn-primary">
+            {{ savingProfile() ? 'Guardando…' : 'Guardar cambios' }}
+          </button>
+        </div>
       </form>
 
-      <form [formGroup]="passwordForm" (ngSubmit)="changePassword()" class="space-y-4 rounded-lg bg-white p-6 shadow">
-        <h2 class="font-semibold">Cambiar contraseña</h2>
+      <form [formGroup]="passwordForm" (ngSubmit)="changePassword()"
+            class="card space-y-5" aria-labelledby="titulo-contrasena">
+        <h2 id="titulo-contrasena" class="section-title">Cambiar contraseña</h2>
         @if (passwordMessage()) {
-          <p class="rounded bg-green-50 px-3 py-2 text-sm text-green-800">{{ passwordMessage() }}</p>
+          <p class="alert-success" role="status">{{ passwordMessage() }}</p>
         }
         @if (passwordError()) {
-          <p class="rounded bg-red-50 px-3 py-2 text-sm text-red-700">{{ passwordError() }}</p>
+          <p class="alert-error" role="alert">{{ passwordError() }}</p>
         }
         <div>
-          <label for="currentPassword" class="mb-1 block text-sm font-medium">Contraseña actual</label>
+          <label for="currentPassword" class="label">Contraseña actual</label>
           <input id="currentPassword" type="password" formControlName="currentPassword" autocomplete="current-password"
-                 class="w-full rounded border border-zinc-300 px-3 py-2 focus:border-indigo-500 focus:outline-none" />
+                 required class="input" />
         </div>
         <div>
-          <label for="newPassword" class="mb-1 block text-sm font-medium">Nueva contraseña</label>
+          <label for="newPassword" class="label">Nueva contraseña</label>
           <input id="newPassword" type="password" formControlName="password" autocomplete="new-password"
-                 class="w-full rounded border border-zinc-300 px-3 py-2 focus:border-indigo-500 focus:outline-none" />
+                 required class="input" />
+          <p class="hint">Mínimo 8 caracteres.</p>
         </div>
-        <button type="submit" [disabled]="passwordForm.invalid || savingPassword()"
-                class="rounded bg-indigo-600 px-4 py-2 font-semibold text-white hover:bg-indigo-500 disabled:opacity-50">
-          Cambiar contraseña
-        </button>
+        <div class="flex justify-end">
+          <button type="submit" [disabled]="passwordForm.invalid || savingPassword()" class="btn-primary">
+            {{ savingPassword() ? 'Guardando…' : 'Cambiar contraseña' }}
+          </button>
+        </div>
       </form>
 
-      <form [formGroup]="deleteForm" (ngSubmit)="deleteAccount()" class="space-y-4 rounded-lg border border-red-200 bg-white p-6 shadow">
-        <h2 class="font-semibold text-red-700">Borrar cuenta</h2>
-        <p class="text-sm text-zinc-600">
-          Esta acción es permanente: se eliminarán tus inscripciones y datos. Introduce tu
-          contraseña para confirmar.
+      <form [formGroup]="deleteForm" (ngSubmit)="deleteAccount()"
+            class="card space-y-5 border-red-200 dark:border-red-900" aria-labelledby="titulo-borrar">
+        <h2 id="titulo-borrar" class="section-title text-red-700 dark:text-red-400">Eliminar cuenta</h2>
+        <p class="alert-warning">
+          Esta acción es <strong>permanente</strong>: se eliminarán tu cuenta, tus inscripciones
+          y tus datos, y no se puede deshacer. Introduce tu contraseña para confirmar.
         </p>
         @if (deleteError()) {
-          <p class="rounded bg-red-50 px-3 py-2 text-sm text-red-700">{{ deleteError() }}</p>
+          <p class="alert-error" role="alert">{{ deleteError() }}</p>
         }
         <div>
-          <label for="deletePassword" class="mb-1 block text-sm font-medium">Contraseña</label>
+          <label for="deletePassword" class="label">Contraseña</label>
           <input id="deletePassword" type="password" formControlName="password" autocomplete="current-password"
-                 class="w-full rounded border border-zinc-300 px-3 py-2 focus:border-red-500 focus:outline-none" />
+                 required class="input" />
         </div>
-        <button type="submit" [disabled]="deleteForm.invalid || deleting()"
-                class="rounded bg-red-600 px-4 py-2 font-semibold text-white hover:bg-red-500 disabled:opacity-50">
-          Borrar mi cuenta
-        </button>
+        <div class="flex justify-end">
+          <button type="submit" [disabled]="deleteForm.invalid || deleting()" class="btn-danger">
+            {{ deleting() ? 'Eliminando…' : 'Eliminar mi cuenta' }}
+          </button>
+        </div>
       </form>
     </div>
   `,

@@ -18,46 +18,55 @@ interface DecklistDetail {
 @Component({
   imports: [RouterLink, DatePipe],
   template: `
-    <div class="mx-auto max-w-3xl space-y-4">
-      <div class="flex items-center justify-between">
-        <h1 class="text-2xl font-bold">Decklist</h1>
-        <a [routerLink]="['/juez/torneo', slug(), 'decklists']"
-           class="text-sm text-indigo-600 hover:underline">Volver al listado</a>
+    <div class="mx-auto max-w-3xl space-y-6">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <h1 class="page-title">Decklist</h1>
+        <a [routerLink]="['/juez/torneo', slug(), 'decklists']" class="link text-sm">← Volver al listado</a>
       </div>
 
       @if (error()) {
-        <p class="rounded bg-red-50 px-3 py-2 text-sm text-red-700">{{ error() }}</p>
+        <p class="alert-error" role="alert">{{ error() }}</p>
       }
 
       @if (decklist(); as d) {
-        <div class="rounded-lg bg-white p-4 shadow">
-          <h2 class="font-semibold">{{ d.playerName }}</h2>
-          <p class="text-xs text-zinc-500">
-            {{ d.parsed.total }} cartas · enviada {{ d.submittedAt | date: 'd MMM, HH:mm' }}
+        <section class="card" aria-labelledby="titulo-jugador">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <h2 id="titulo-jugador" class="section-title">{{ d.playerName }}</h2>
+            <span class="badge-brand">{{ d.parsed.total }} cartas</span>
+          </div>
+          <p class="mt-1.5 text-sm text-stone-500 dark:text-stone-400">
+            Enviada {{ d.submittedAt | date: 'd MMM, HH:mm' }}
             @if (d.lockedAt) { · bloqueada {{ d.lockedAt | date: 'd MMM, HH:mm' }} }
           </p>
-        </div>
+        </section>
 
         <div class="grid gap-4 lg:grid-cols-2">
-          <div class="space-y-4 rounded-lg bg-white p-4 text-sm shadow">
+          <section class="card space-y-5 text-sm" aria-label="Lista por secciones">
             @for (section of sections(d); track section.title) {
               @if (section.cards.length > 0) {
                 <div>
-                  <h3 class="font-medium text-zinc-700">{{ section.title }} ({{ count(section.cards) }})</h3>
-                  <ul class="mt-1 space-y-0.5 text-zinc-600">
+                  <h3 class="section-title flex items-baseline justify-between gap-2 border-b border-stone-100 dark:border-stone-800 pb-2">
+                    {{ section.title }}
+                    <span class="font-mono text-xs font-semibold text-stone-500 dark:text-stone-400">{{ count(section.cards) }} cartas</span>
+                  </h3>
+                  <ul class="mt-2 space-y-1 text-stone-700 dark:text-stone-300">
                     @for (card of section.cards; track card.name + card.set + card.number) {
-                      <li>{{ card.quantity }}× {{ card.name }}
-                        <span class="text-zinc-400">{{ card.set }} {{ card.number }}</span></li>
+                      <li class="flex items-baseline gap-2">
+                        <span class="w-8 shrink-0 text-right font-mono font-semibold tabular-nums">{{ card.quantity }}×</span>
+                        <span>{{ card.name }}
+                          <span class="text-xs text-stone-400 dark:text-stone-500">{{ card.set }} {{ card.number }}</span></span>
+                      </li>
                     }
                   </ul>
                 </div>
               }
             }
-          </div>
-          <div class="rounded-lg bg-white p-4 shadow">
-            <h3 class="text-sm font-medium text-zinc-700">Texto original</h3>
-            <pre class="mt-2 overflow-x-auto whitespace-pre-wrap font-mono text-xs text-zinc-600">{{ d.rawText }}</pre>
-          </div>
+          </section>
+
+          <section class="card" aria-labelledby="titulo-texto-original">
+            <h3 id="titulo-texto-original" class="section-title border-b border-stone-100 dark:border-stone-800 pb-2">Texto original</h3>
+            <pre class="mt-3 overflow-x-auto whitespace-pre-wrap rounded-lg bg-stone-50 dark:bg-stone-800/40 p-3 font-mono text-xs leading-relaxed text-stone-600 dark:text-stone-400">{{ d.rawText }}</pre>
+          </section>
         </div>
       }
     </div>

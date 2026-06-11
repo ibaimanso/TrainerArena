@@ -9,53 +9,54 @@ import { JudgeCallChatComponent } from './judge-call-chat.component';
 @Component({
   imports: [RouterLink, JudgeCallChatComponent],
   template: `
-    <div class="mx-auto max-w-xl space-y-4">
-      <div class="flex items-center justify-between">
-        <h1 class="text-2xl font-bold">Llamada a juez</h1>
-        <a routerLink="/juez/cola" class="text-sm text-indigo-600 hover:underline">Volver a la cola</a>
+    <div class="mx-auto max-w-xl space-y-6">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <h1 class="page-title">Llamada a juez</h1>
+        <a routerLink="/juez/cola" class="link text-sm">← Volver a la cola</a>
       </div>
 
       @if (error()) {
-        <p class="rounded bg-red-50 px-3 py-2 text-sm text-red-700">{{ error() }}</p>
+        <p class="alert-error" role="alert">{{ error() }}</p>
       }
 
       @if (call(); as c) {
-        <div class="rounded-lg bg-white p-4 shadow">
-          <p class="text-sm font-semibold">
-            {{ c.tournamentName }} · R{{ c.roundNumber }} · Mesa {{ c.tableNumber }}
-          </p>
-          <p class="mt-1 text-xs text-zinc-500">
-            {{ c.playerA?.name }} vs {{ c.playerB?.name ?? '—' }}
-          </p>
-          <p class="mt-2 text-sm">
-            Estado:
-            <span class="rounded-full px-2 py-0.5 text-xs font-medium"
-                  [class]="c.status === 'open' ? 'bg-amber-50 text-amber-700' : c.status === 'in_progress' ? 'bg-indigo-50 text-indigo-700' : 'bg-zinc-100 text-zinc-600'">
+        <section class="card" aria-labelledby="titulo-detalle-llamada">
+          <div class="flex flex-wrap items-start justify-between gap-2">
+            <div class="min-w-0">
+              <h2 id="titulo-detalle-llamada" class="section-title">
+                Mesa {{ c.tableNumber }}
+                <span class="font-medium text-stone-500 dark:text-stone-400">· {{ c.tournamentName }} · Ronda {{ c.roundNumber }}</span>
+              </h2>
+              <p class="mt-1 text-sm text-stone-500 dark:text-stone-400">
+                {{ c.playerA?.name }} vs {{ c.playerB?.name ?? '—' }}
+              </p>
+            </div>
+            <span role="status"
+                  [class]="c.status === 'open' ? 'badge-warning' : c.status === 'in_progress' ? 'badge-brand' : 'badge-success'">
               {{ statusLabel(c.status) }}
             </span>
-            @if (c.assignedJudge) {
-              <span class="ml-2 text-xs text-zinc-500">Atiende: {{ c.assignedJudge.name }}</span>
-            }
-          </p>
-          <div class="mt-3 flex gap-2">
-            @if (c.status === 'open') {
-              <button type="button" (click)="take()" [disabled]="busy()"
-                      class="rounded bg-indigo-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-indigo-500 disabled:opacity-50">
-                Atender
-              </button>
-            }
-            @if (c.status !== 'resolved') {
-              <button type="button" (click)="resolve()" [disabled]="busy()"
-                      class="rounded bg-green-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-green-500 disabled:opacity-50">
+          </div>
+          @if (c.assignedJudge) {
+            <p class="mt-2 text-sm text-stone-500 dark:text-stone-400">Atiende: <span class="font-medium text-stone-700 dark:text-stone-300">{{ c.assignedJudge.name }}</span></p>
+          }
+          @if (c.status !== 'resolved') {
+            <div class="mt-4 flex flex-wrap gap-2 border-t border-stone-100 dark:border-stone-800 pt-4">
+              @if (c.status === 'open') {
+                <button type="button" (click)="take()" [disabled]="busy()" class="btn-primary">
+                  Atender
+                </button>
+              }
+              <button type="button" (click)="resolve()" [disabled]="busy()" class="btn-success">
                 Marcar como resuelta
               </button>
-            }
-          </div>
-        </div>
+            </div>
+          }
+        </section>
 
-        <div class="rounded-lg bg-white p-4 shadow">
+        <section class="card" aria-labelledby="titulo-chat-llamada">
+          <h2 id="titulo-chat-llamada" class="section-title mb-3">Chat de la llamada</h2>
           <app-judge-call-chat [callId]="c.id" />
-        </div>
+        </section>
       }
     </div>
   `,

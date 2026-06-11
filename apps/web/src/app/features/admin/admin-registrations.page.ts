@@ -12,96 +12,102 @@ import {
 @Component({
   imports: [RouterLink, DatePipe],
   template: `
-    <div class="space-y-4">
-      <div class="flex items-center justify-between">
-        <h1 class="text-2xl font-bold">Registros</h1>
-        <a routerLink="/admin/torneos" class="text-sm text-indigo-600 hover:underline">Volver a mis torneos</a>
+    <div class="space-y-6">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 class="page-title">Registros</h1>
+          <p class="mt-1 text-sm text-stone-500 dark:text-stone-400">Inscripciones de jugadores y solicitudes de juez del torneo.</p>
+        </div>
+        <a routerLink="/admin/torneos" class="link text-sm">Volver a mis torneos</a>
       </div>
 
       @if (error()) {
-        <p class="rounded bg-red-50 px-3 py-2 text-sm text-red-700">{{ error() }}</p>
+        <p class="alert-error" role="alert">{{ error() }}</p>
       }
 
-      <nav class="flex gap-1 rounded-lg bg-white p-1 shadow w-fit text-sm">
+      <nav class="flex w-fit gap-1 rounded-lg border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-800 p-1 text-sm shadow-sm"
+           aria-label="Tipo de registros">
         <button type="button" (click)="tab.set('registrations')"
-                [class]="tab() === 'registrations' ? 'rounded bg-indigo-600 px-4 py-2 font-medium text-white' : 'rounded px-4 py-2 font-medium hover:bg-indigo-50'">
+                [attr.aria-current]="tab() === 'registrations' ? 'true' : null"
+                [class]="tab() === 'registrations' ? 'rounded-md bg-stone-900 px-4 py-2 font-medium text-white' : 'rounded-md px-4 py-2 font-medium text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800 hover:text-stone-900 dark:hover:text-stone-100'">
           Inscripciones
         </button>
         <button type="button" (click)="tab.set('judges')"
-                [class]="tab() === 'judges' ? 'rounded bg-indigo-600 px-4 py-2 font-medium text-white' : 'rounded px-4 py-2 font-medium hover:bg-indigo-50'">
+                [attr.aria-current]="tab() === 'judges' ? 'true' : null"
+                [class]="tab() === 'judges' ? 'rounded-md bg-stone-900 px-4 py-2 font-medium text-white' : 'rounded-md px-4 py-2 font-medium text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800 hover:text-stone-900 dark:hover:text-stone-100'">
           Solicitudes de juez
         </button>
       </nav>
 
       @if (tab() === 'registrations') {
-        <div class="overflow-x-auto rounded-lg bg-white shadow">
-          <table class="w-full text-left text-sm">
-            <thead class="border-b border-zinc-200 text-xs uppercase text-zinc-500">
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
               <tr>
-                <th class="px-4 py-3">Jugador</th>
-                <th class="px-4 py-3">TCG Live</th>
-                <th class="px-4 py-3">Email</th>
-                <th class="px-4 py-3">Estado</th>
-                <th class="px-4 py-3">Inscrito</th>
+                <th scope="col">Jugador</th>
+                <th scope="col">TCG Live</th>
+                <th scope="col">Email</th>
+                <th scope="col">Estado</th>
+                <th scope="col">Inscrito</th>
               </tr>
             </thead>
             <tbody>
               @for (r of registrations(); track r.id) {
-                <tr class="border-b border-zinc-100">
-                  <td class="px-4 py-3 font-medium">{{ r.fullName }}</td>
-                  <td class="px-4 py-3">{{ r.tcgLiveUsername }}</td>
-                  <td class="px-4 py-3 text-zinc-500">{{ r.email }}</td>
-                  <td class="px-4 py-3">
-                    <span class="rounded-full px-2 py-0.5 text-xs"
-                          [class]="r.status === 'active' ? 'bg-green-50 text-green-700' : r.status === 'pending_payment' ? 'bg-amber-50 text-amber-700' : 'bg-zinc-100 text-zinc-600'">
+                <tr>
+                  <td class="font-medium text-stone-900 dark:text-stone-100">{{ r.fullName }}</td>
+                  <td class="font-mono text-xs text-stone-700 dark:text-stone-300">{{ r.tcgLiveUsername }}</td>
+                  <td><a [href]="'mailto:' + r.email" class="link">{{ r.email }}</a></td>
+                  <td>
+                    <span [class]="r.status === 'active' ? 'badge-success' : r.status === 'pending_payment' ? 'badge-warning' : 'badge-neutral'">
                       {{ statusLabel(r.status) }}
                     </span>
                   </td>
-                  <td class="px-4 py-3 text-zinc-500">{{ r.registeredAt | date: 'd MMM, HH:mm' }}</td>
+                  <td class="whitespace-nowrap text-stone-500 dark:text-stone-400">{{ r.registeredAt | date: 'd MMM, HH:mm' }}</td>
                 </tr>
               } @empty {
-                <tr><td colspan="5" class="px-4 py-6 text-center text-zinc-500">Sin inscripciones todavía.</td></tr>
+                <tr><td colspan="5" class="py-6 text-center text-stone-500 dark:text-stone-400">Sin inscripciones todavía.</td></tr>
               }
             </tbody>
           </table>
         </div>
       } @else {
-        <div class="overflow-x-auto rounded-lg bg-white shadow">
-          <table class="w-full text-left text-sm">
-            <thead class="border-b border-zinc-200 text-xs uppercase text-zinc-500">
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
               <tr>
-                <th class="px-4 py-3">Juez</th>
-                <th class="px-4 py-3">Email</th>
-                <th class="px-4 py-3">Estado</th>
-                <th class="px-4 py-3">Solicitada</th>
-                <th class="px-4 py-3">Acciones</th>
+                <th scope="col">Juez</th>
+                <th scope="col">Email</th>
+                <th scope="col">Estado</th>
+                <th scope="col">Solicitada</th>
+                <th scope="col">Acciones</th>
               </tr>
             </thead>
             <tbody>
               @for (a of applications(); track a.id) {
-                <tr class="border-b border-zinc-100">
-                  <td class="px-4 py-3 font-medium">{{ a.name }}</td>
-                  <td class="px-4 py-3 text-zinc-500">{{ a.email }}</td>
-                  <td class="px-4 py-3">
-                    <span class="rounded-full px-2 py-0.5 text-xs"
-                          [class]="a.status === 'approved' ? 'bg-green-50 text-green-700' : a.status === 'pending' ? 'bg-amber-50 text-amber-700' : 'bg-zinc-100 text-zinc-600'">
+                <tr>
+                  <td class="font-medium text-stone-900 dark:text-stone-100">{{ a.name }}</td>
+                  <td><a [href]="'mailto:' + a.email" class="link">{{ a.email }}</a></td>
+                  <td>
+                    <span [class]="a.status === 'approved' ? 'badge-success' : a.status === 'pending' ? 'badge-warning' : 'badge-danger'">
                       {{ judgeStatusLabel(a.status) }}
                     </span>
                   </td>
-                  <td class="px-4 py-3 text-zinc-500">{{ a.appliedAt | date: 'd MMM, HH:mm' }}</td>
-                  <td class="px-4 py-3">
+                  <td class="whitespace-nowrap text-stone-500 dark:text-stone-400">{{ a.appliedAt | date: 'd MMM, HH:mm' }}</td>
+                  <td>
                     @if (a.status === 'pending') {
-                      <div class="flex gap-2">
-                        <button type="button" (click)="decide(a, 'approved')"
-                                class="rounded bg-green-600 px-3 py-1 text-xs font-semibold text-white hover:bg-green-500">Aprobar</button>
-                        <button type="button" (click)="decide(a, 'rejected')"
-                                class="rounded bg-red-600 px-3 py-1 text-xs font-semibold text-white hover:bg-red-500">Rechazar</button>
+                      <div class="flex flex-wrap gap-2">
+                        <button type="button" (click)="decide(a, 'approved')" class="btn-success btn-sm">
+                          Aprobar
+                        </button>
+                        <button type="button" (click)="decide(a, 'rejected')" class="btn-danger-outline btn-sm">
+                          Rechazar
+                        </button>
                       </div>
                     }
                   </td>
                 </tr>
               } @empty {
-                <tr><td colspan="5" class="px-4 py-6 text-center text-zinc-500">Sin solicitudes de juez.</td></tr>
+                <tr><td colspan="5" class="py-6 text-center text-stone-500 dark:text-stone-400">Sin solicitudes de juez.</td></tr>
               }
             </tbody>
           </table>

@@ -8,84 +8,92 @@ import { RoundsService, type AdminRound } from '../../core/rounds.service';
 @Component({
   imports: [RouterLink, DatePipe],
   template: `
-    <div class="space-y-4">
-      <div class="flex items-center justify-between">
-        <h1 class="text-2xl font-bold">Rondas</h1>
-        <a routerLink="/admin/torneos" class="text-sm text-indigo-600 hover:underline">Volver a mis torneos</a>
+    <div class="space-y-6">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 class="page-title">Rondas</h1>
+          <p class="mt-1 text-sm text-stone-500 dark:text-stone-400">Genera pareos, inicia y cierra las rondas del torneo.</p>
+        </div>
+        <a routerLink="/admin/torneos" class="link text-sm">Volver a mis torneos</a>
       </div>
 
       @if (error()) {
-        <p class="rounded bg-red-50 px-3 py-2 text-sm text-red-700">{{ error() }}</p>
+        <p class="alert-error" role="alert">{{ error() }}</p>
       }
       @if (notice()) {
-        <p class="rounded bg-amber-50 px-3 py-2 text-sm text-amber-800">{{ notice() }}</p>
+        <p class="alert-warning" role="status">{{ notice() }}</p>
       }
 
-      <div class="flex flex-wrap items-center gap-3 rounded-lg bg-white p-4 shadow">
-        <p class="text-sm text-zinc-600">
-          Suizas: {{ swissPlayed() }} / {{ swissRounds() }}
+      <div class="card flex flex-wrap items-center justify-between gap-3 p-4">
+        <p class="text-sm text-stone-600 dark:text-stone-400">
+          <span class="font-semibold text-stone-900 dark:text-stone-100">Suizas: {{ swissPlayed() }} / {{ swissRounds() }}</span>
           @if (topCutSize() > 0) { · Top cut {{ topCutSize() }} (automático al cerrar la última suiza) }
         </p>
         @if (canGenerate()) {
-          <button type="button" (click)="generate()" [disabled]="busy()"
-                  class="rounded bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 disabled:opacity-50">
+          <button type="button" (click)="generate()" [disabled]="busy()" class="btn-primary">
             Generar pareos (R{{ swissPlayed() + 1 }})
           </button>
         }
       </div>
 
-      <div class="space-y-3">
+      <ol class="space-y-3" aria-label="Lista de rondas">
         @for (r of rounds(); track r.id) {
-          <div class="rounded-lg bg-white p-4 shadow">
+          <li class="card p-4">
             <div class="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <h2 class="font-semibold">
-                  Ronda {{ r.roundNumber }}
-                  <span class="ml-1 rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-normal">
+                <div class="flex flex-wrap items-center gap-2">
+                  <h2 class="section-title">Ronda {{ r.roundNumber }}</h2>
+                  <span [class]="r.phase === 'swiss' ? 'badge-neutral' : 'badge-brand'">
                     {{ r.phase === 'swiss' ? 'Suiza' : 'Top cut' }}
                   </span>
-                  <span class="ml-1 rounded-full px-2 py-0.5 text-xs font-normal"
-                        [class]="r.status === 'active' ? 'bg-green-50 text-green-700' : r.status === 'pending' ? 'bg-amber-50 text-amber-700' : 'bg-zinc-100 text-zinc-600'">
+                  <span [class]="r.status === 'active' ? 'badge-success' : r.status === 'pending' ? 'badge-warning' : 'badge-neutral'">
                     {{ statusLabel(r.status) }}
                   </span>
-                </h2>
-                <p class="mt-1 text-xs text-zinc-500">
+                </div>
+                <p class="mt-1.5 text-xs text-stone-500 dark:text-stone-400">
                   {{ r.totalMatches }} mesas
                   @for (entry of counts(r); track entry[0]) {
                     · {{ matchStatusLabel(entry[0]) }}: {{ entry[1] }}
                   }
                 </p>
                 @if (r.endsAt && r.status === 'active') {
-                  <p class="mt-1 text-xs text-zinc-500">Termina: {{ r.endsAt | date: 'HH:mm:ss' }}</p>
+                  <p class="mt-1 text-xs text-stone-500 dark:text-stone-400">Termina: {{ r.endsAt | date: 'HH:mm:ss' }}</p>
                 }
               </div>
               <div class="flex flex-wrap gap-2">
                 @if (r.status === 'pending') {
-                  <button type="button" (click)="start(r)" [disabled]="busy()"
-                          class="rounded bg-green-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-green-500 disabled:opacity-50">
-                    Iniciar
+                  <button type="button" (click)="start(r)" [disabled]="busy()" class="btn-success btn-sm">
+                    Iniciar ronda
                   </button>
-                  <a [routerLink]="['/admin/rondas', r.id, 'pareo-manual']"
-                     class="rounded border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50">Pareo manual</a>
+                  <a [routerLink]="['/admin/rondas', r.id, 'pareo-manual']" class="btn-secondary btn-sm">
+                    Pareo manual
+                  </a>
                 }
                 @if (r.status === 'active') {
-                  <button type="button" (click)="close(r)" [disabled]="busy()"
-                          class="rounded bg-amber-500 px-3 py-1.5 text-sm font-semibold text-white hover:bg-amber-400 disabled:opacity-50">
+                  <button type="button" (click)="close(r)" [disabled]="busy()" class="btn-warning btn-sm">
                     Cerrar ronda
                   </button>
                 }
-                <a [routerLink]="['/torneo', slug(), 'pareos', 'ronda', r.roundNumber]"
-                   class="rounded border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50">Ver pareos</a>
+                <a [routerLink]="['/torneo', slug(), 'pareos', 'ronda', r.roundNumber]" class="btn-secondary btn-sm">
+                  Ver pareos
+                </a>
               </div>
             </div>
-          </div>
+          </li>
         } @empty {
-          <p class="rounded-lg bg-white p-6 text-sm text-zinc-500 shadow">
-            Todavía no hay rondas. Genera los pareos de la primera ronda cuando las
-            inscripciones estén cerradas.
-          </p>
+          <li class="empty-state">
+            <svg class="h-10 w-10 text-stone-300 dark:text-stone-600" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="9" />
+              <path d="M12 7v5l3 3" />
+            </svg>
+            <p>Todavía no hay rondas.</p>
+            <p class="text-xs text-stone-400 dark:text-stone-500">
+              Genera los pareos de la primera ronda cuando las inscripciones estén cerradas.
+            </p>
+          </li>
         }
-      </div>
+      </ol>
     </div>
   `,
 })

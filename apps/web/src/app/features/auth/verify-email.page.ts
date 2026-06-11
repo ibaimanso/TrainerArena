@@ -13,52 +13,55 @@ type State = 'notice' | 'verifying' | 'verified' | 'error';
   imports: [RouterLink],
   template: `
     <div class="mx-auto max-w-md">
-      <h1 class="mb-6 text-2xl font-bold">Verificación de email</h1>
-      <div class="space-y-4 rounded-lg bg-white p-6 shadow">
+      <h1 class="page-title mb-2 text-center">Verificación de email</h1>
+      <p class="mb-6 text-center text-sm text-stone-500 dark:text-stone-400">
+        Necesitas verificar tu email para inscribirte en torneos.
+      </p>
+      <div class="card space-y-5">
         @switch (state()) {
           @case ('verifying') {
-            <p class="text-sm text-zinc-600">Verificando tu dirección de email…</p>
+            <div class="space-y-3" role="status" aria-label="Verificando tu dirección de email">
+              <p class="text-sm text-stone-600 dark:text-stone-400">Verificando tu dirección de email…</p>
+              <div class="skeleton h-4 w-2/3"></div>
+              <div class="skeleton h-4 w-1/2"></div>
+            </div>
           }
           @case ('verified') {
-            <p class="rounded bg-green-50 px-3 py-2 text-sm text-green-800">
+            <p class="alert-success" role="status">
               ¡Tu email ha sido verificado! Ya puedes usar todas las funciones.
             </p>
-            <a routerLink="/" class="inline-block rounded bg-indigo-600 px-4 py-2 font-semibold text-white hover:bg-indigo-500">
-              Ir a los torneos
-            </a>
+            <a routerLink="/" class="btn-primary w-full">Ir a los torneos</a>
           }
           @case ('error') {
-            <p class="rounded bg-red-50 px-3 py-2 text-sm text-red-700">{{ error() }}</p>
+            <p class="alert-error" role="alert">{{ error() }}</p>
             @if (auth.isLoggedIn()) {
-              <button type="button" (click)="resend()" [disabled]="resending()"
-                      class="rounded bg-indigo-600 px-4 py-2 font-semibold text-white hover:bg-indigo-500 disabled:opacity-50">
+              <button type="button" (click)="resend()" [disabled]="resending()" class="btn-primary w-full">
                 Enviar un nuevo enlace
               </button>
             }
           }
           @default {
             @if (auth.isVerified()) {
-              <p class="rounded bg-green-50 px-3 py-2 text-sm text-green-800">Tu email ya está verificado.</p>
+              <p class="alert-success" role="status">Tu email ya está verificado.</p>
             } @else {
-              <p class="text-sm text-zinc-600">
+              <p class="text-sm leading-relaxed text-stone-600 dark:text-stone-400">
                 Te hemos enviado un email con un enlace de verificación. Revisa tu bandeja de
                 entrada (y la carpeta de spam). Debes verificar tu email para poder inscribirte
                 en torneos.
               </p>
               @if (resent()) {
-                <p class="rounded bg-green-50 px-3 py-2 text-sm text-green-800">Enlace reenviado.</p>
+                <p class="alert-success" role="status">Enlace reenviado. Revisa tu bandeja de entrada.</p>
               }
               @if (error()) {
-                <p class="rounded bg-red-50 px-3 py-2 text-sm text-red-700">{{ error() }}</p>
+                <p class="alert-error" role="alert">{{ error() }}</p>
               }
               @if (auth.isLoggedIn()) {
-                <button type="button" (click)="resend()" [disabled]="resending()"
-                        class="rounded bg-indigo-600 px-4 py-2 font-semibold text-white hover:bg-indigo-500 disabled:opacity-50">
+                <button type="button" (click)="resend()" [disabled]="resending()" class="btn-primary w-full">
                   {{ resending() ? 'Enviando…' : 'Reenviar enlace' }}
                 </button>
               } @else {
-                <p class="text-sm">
-                  <a routerLink="/login" class="text-indigo-600 hover:underline">Inicia sesión</a>
+                <p class="border-t border-stone-100 dark:border-stone-800 pt-4 text-center text-sm text-stone-500 dark:text-stone-400">
+                  <a routerLink="/login" class="link">Inicia sesión</a>
                   para reenviar el enlace.
                 </p>
               }

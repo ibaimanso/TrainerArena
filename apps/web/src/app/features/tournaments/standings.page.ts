@@ -41,34 +41,46 @@ interface StandingsData {
 @Component({
   imports: [RouterLink, DecimalPipe, TournamentHeaderComponent],
   template: `
-    <div class="space-y-4">
+    <div class="space-y-6">
       <app-tournament-header [tournament]="tournament()" />
 
       @if (data(); as d) {
         @if (d.champion) {
-          <div class="rounded-lg bg-gradient-to-r from-amber-400 to-yellow-500 p-4 text-center shadow">
-            <p class="text-lg font-bold text-white">🏆 Campeón: {{ d.champion.name }}</p>
+          <div class="card flex items-center justify-center gap-2.5 p-4 text-center"
+               role="status">
+            <svg class="h-6 w-6 shrink-0 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
+              <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
+              <path d="M4 22h16" />
+              <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" />
+              <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" />
+              <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" />
+            </svg>
+            <p class="text-lg font-semibold text-stone-900 dark:text-stone-100">Campeón: {{ d.champion.name }}</p>
           </div>
         }
 
         @if (d.topCut.length > 0) {
-          <section class="rounded-lg bg-white p-4 shadow">
-            <h2 class="mb-3 font-semibold">Top cut</h2>
+          <section class="card" aria-labelledby="titulo-top-cut">
+            <h2 id="titulo-top-cut" class="section-title mb-4">Top cut</h2>
             <div class="flex gap-6 overflow-x-auto pb-2">
               @for (round of d.topCut; track round.roundNumber) {
                 <div class="min-w-44">
-                  <h3 class="mb-2 text-xs font-semibold uppercase text-zinc-500">
+                  <h3 class="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500 dark:text-stone-400">
                     {{ cutRoundLabel(round.matches.length) }} (R{{ round.roundNumber }})
                   </h3>
                   <div class="space-y-2">
                     @for (m of round.matches; track m.bracketPosition) {
-                      <div class="rounded border border-zinc-200 text-sm">
-                        <p class="border-b border-zinc-100 px-2 py-1"
-                           [class.font-bold]="m.winnerId !== null && m.winnerId === m.playerA?.id">
+                      <div class="overflow-hidden rounded-lg border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-800 text-sm">
+                        <p class="border-b border-stone-100 dark:border-stone-800 px-2.5 py-1.5"
+                           [class.font-bold]="m.winnerId !== null && m.winnerId === m.playerA?.id"
+                           [class.text-stone-900 dark:text-stone-100]="m.winnerId !== null && m.winnerId === m.playerA?.id">
                           {{ m.playerA?.name ?? '—' }}
                         </p>
-                        <p class="px-2 py-1"
-                           [class.font-bold]="m.winnerId !== null && m.winnerId === m.playerB?.id">
+                        <p class="px-2.5 py-1.5"
+                           [class.font-bold]="m.winnerId !== null && m.winnerId === m.playerB?.id"
+                           [class.text-stone-900 dark:text-stone-100]="m.winnerId !== null && m.winnerId === m.playerB?.id">
                           {{ m.isBye ? 'BYE' : (m.playerB?.name ?? '—') }}
                         </p>
                       </div>
@@ -80,46 +92,66 @@ interface StandingsData {
           </section>
         }
 
-        <section class="overflow-x-auto rounded-lg bg-white shadow">
-          <table class="w-full text-left text-sm">
-            <thead class="border-b border-zinc-200 text-xs uppercase text-zinc-500">
-              <tr>
-                <th class="px-3 py-3">#</th>
-                <th class="px-3 py-3">Jugador</th>
-                <th class="px-3 py-3">TCG Live</th>
-                <th class="px-3 py-3 text-right">Puntos</th>
-                <th class="px-3 py-3 text-right">W-L-D</th>
-                <th class="px-3 py-3 text-right">OWP %</th>
-                <th class="px-3 py-3 text-right">OOWP %</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (row of d.standings; track row.playerId) {
-                <tr class="border-b border-zinc-100" [class.text-zinc-400]="row.dropped">
-                  <td class="px-3 py-2 font-medium">{{ row.position }}</td>
-                  <td class="px-3 py-2">
-                    {{ row.playerName }}
-                    @if (row.dropped) { <span class="text-xs">(retirado)</span> }
-                  </td>
-                  <td class="px-3 py-2 text-zinc-500">{{ row.tcgLiveUsername }}</td>
-                  <td class="px-3 py-2 text-right font-semibold">{{ row.points }}</td>
-                  <td class="px-3 py-2 text-right">{{ row.wins }}-{{ row.losses }}-{{ row.draws }}</td>
-                  <td class="px-3 py-2 text-right">{{ row.owp * 100 | number: '1.2-2' }}</td>
-                  <td class="px-3 py-2 text-right">{{ row.oowp * 100 | number: '1.2-2' }}</td>
+        <section aria-label="Tabla de clasificación">
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th scope="col">#</th>
+                  <th scope="col">Jugador</th>
+                  <th scope="col">TCG Live</th>
+                  <th scope="col" class="text-right">Puntos</th>
+                  <th scope="col" class="text-right">W-L-D</th>
+                  <th scope="col" class="text-right">OWP %</th>
+                  <th scope="col" class="text-right">OOWP %</th>
                 </tr>
-              } @empty {
-                <tr><td colspan="7" class="px-3 py-6 text-center text-zinc-500">Sin clasificación todavía.</td></tr>
-              }
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                @for (row of d.standings; track row.playerId) {
+                  <tr [class.text-stone-400 dark:text-stone-500]="row.dropped"
+                      [class.bg-stone-100/60]="!row.dropped && (tournament()?.topCutSize ?? 0) >= row.position">
+                    <td class="font-mono font-medium tabular-nums">{{ row.position }}</td>
+                    <td class="font-medium" [class.text-stone-400 dark:text-stone-500]="row.dropped">
+                      {{ row.playerName }}
+                      @if (row.dropped) { <span class="text-xs font-normal">(retirado)</span> }
+                      @if (!row.dropped && (tournament()?.topCutSize ?? 0) >= row.position) {
+                        <span class="badge-brand ml-1.5">Top {{ tournament()?.topCutSize }}</span>
+                      }
+                    </td>
+                    <td class="text-stone-500 dark:text-stone-400">{{ row.tcgLiveUsername }}</td>
+                    <td class="text-right font-mono font-semibold tabular-nums">{{ row.points }}</td>
+                    <td class="text-right font-mono tabular-nums">{{ row.wins }}-{{ row.losses }}-{{ row.draws }}</td>
+                    <td class="text-right font-mono tabular-nums">{{ row.owp * 100 | number: '1.2-2' }}</td>
+                    <td class="text-right font-mono tabular-nums">{{ row.oowp * 100 | number: '1.2-2' }}</td>
+                  </tr>
+                } @empty {
+                  <tr><td colspan="7" class="py-8 text-center text-stone-500 dark:text-stone-400">Sin clasificación todavía.</td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          @if ((tournament()?.topCutSize ?? 0) > 0 && d.standings.length > 0) {
+            <p class="mt-2 text-xs text-stone-500 dark:text-stone-400">
+              Las posiciones marcadas con «Top {{ tournament()?.topCutSize }}» clasifican al top cut.
+            </p>
+          }
         </section>
       } @else if (notFound()) {
-        <div class="rounded-lg bg-white p-8 text-center shadow">
-          <h1 class="text-xl font-bold">Torneo no encontrado</h1>
-          <a routerLink="/" class="mt-3 inline-block text-indigo-600 hover:underline">Volver</a>
+        <div class="empty-state">
+          <svg class="h-10 w-10 text-stone-300 dark:text-stone-600" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="8" />
+            <path d="m21 21-4.3-4.3M8 11h6" />
+          </svg>
+          <h1 class="text-lg font-bold text-stone-900 dark:text-stone-100">Torneo no encontrado</h1>
+          <a routerLink="/" class="btn-secondary mt-2">Volver a los torneos</a>
         </div>
       } @else {
-        <p class="text-center text-sm text-zinc-500">Cargando clasificación…</p>
+        <div class="table-wrap space-y-3 p-5" aria-label="Cargando clasificación">
+          <div class="skeleton h-5 w-full"></div>
+          <div class="skeleton h-5 w-full"></div>
+          <div class="skeleton h-5 w-2/3"></div>
+        </div>
       }
     </div>
   `,

@@ -8,24 +8,26 @@ import { AuthService } from '../../core/auth.service';
   imports: [ReactiveFormsModule, RouterLink],
   template: `
     <div class="mx-auto max-w-sm">
-      <h1 class="mb-6 text-2xl font-bold">Restablecer contraseña</h1>
+      <h1 class="page-title mb-2 text-center">Restablecer contraseña</h1>
+      <p class="mb-6 text-center text-sm text-stone-500 dark:text-stone-400">
+        Elige una nueva contraseña para tu cuenta.
+      </p>
 
-      <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-4 rounded-lg bg-white p-6 shadow">
+      <form [formGroup]="form" (ngSubmit)="submit()" class="card space-y-5">
         @if (error()) {
-          <p class="rounded bg-red-50 px-3 py-2 text-sm text-red-700">{{ error() }}</p>
+          <p class="alert-error" role="alert">{{ error() }}</p>
         }
         <div>
-          <label for="password" class="mb-1 block text-sm font-medium">Nueva contraseña</label>
+          <label for="password" class="label">Nueva contraseña</label>
           <input id="password" type="password" formControlName="password" autocomplete="new-password"
-                 class="w-full rounded border border-zinc-300 px-3 py-2 focus:border-indigo-500 focus:outline-none" />
-          <p class="mt-1 text-xs text-zinc-500">Mínimo 8 caracteres.</p>
+                 required class="input" />
+          <p class="hint">Mínimo 8 caracteres.</p>
         </div>
-        <button type="submit" [disabled]="form.invalid || loading()"
-                class="w-full rounded bg-indigo-600 px-4 py-2 font-semibold text-white hover:bg-indigo-500 disabled:opacity-50">
+        <button type="submit" [disabled]="form.invalid || loading()" class="btn-primary w-full">
           {{ loading() ? 'Guardando…' : 'Restablecer contraseña' }}
         </button>
-        <p class="text-sm">
-          <a routerLink="/login" class="text-indigo-600 hover:underline">Volver a iniciar sesión</a>
+        <p class="border-t border-stone-100 dark:border-stone-800 pt-4 text-center text-sm text-stone-500 dark:text-stone-400">
+          <a routerLink="/login" class="link">Volver a iniciar sesión</a>
         </p>
       </form>
     </div>

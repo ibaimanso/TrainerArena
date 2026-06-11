@@ -5,15 +5,13 @@ import { RouterLink } from '@angular/router';
 @Component({
   imports: [RouterLink],
   template: `
-    <div class="mx-auto max-w-md rounded-lg bg-white p-10 text-center shadow">
-      <p class="text-5xl font-bold text-indigo-600">404</p>
-      <h1 class="mt-3 text-xl font-bold">Página no encontrada</h1>
-      <p class="mt-2 text-sm text-zinc-500">
+    <div class="card mx-auto max-w-md py-12 text-center">
+      <p class="text-6xl font-bold tracking-tight text-stone-900 dark:text-stone-100" aria-hidden="true">404</p>
+      <h1 class="mt-4 text-xl font-bold">Página no encontrada</h1>
+      <p class="mx-auto mt-2 max-w-xs text-sm leading-relaxed text-stone-500 dark:text-stone-400">
         La página que buscas no existe o ya no está disponible.
       </p>
-      <a routerLink="/" class="mt-5 inline-block rounded bg-indigo-600 px-4 py-2 font-semibold text-white hover:bg-indigo-500">
-        Volver a los torneos
-      </a>
+      <a routerLink="/" class="btn-primary mt-6">Volver a los torneos</a>
     </div>
   `,
 })

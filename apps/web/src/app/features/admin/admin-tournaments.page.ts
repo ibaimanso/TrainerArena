@@ -12,68 +12,96 @@ import {
 @Component({
   imports: [RouterLink, DatePipe],
   template: `
-    <div class="space-y-4">
-      <div class="flex items-center justify-between">
-        <h1 class="text-2xl font-bold">Mis torneos</h1>
-        <a routerLink="/admin/torneos/crear"
-           class="rounded bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500">
+    <div class="space-y-6">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 class="page-title">Mis torneos</h1>
+          <p class="mt-1 text-sm text-stone-500 dark:text-stone-400">Gestiona inscripciones, rondas y registros de tus torneos.</p>
+        </div>
+        <a routerLink="/admin/torneos/crear" class="btn-primary">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
           Crear torneo
         </a>
       </div>
 
       @if (error()) {
-        <p class="rounded bg-red-50 px-3 py-2 text-sm text-red-700">{{ error() }}</p>
+        <p class="alert-error" role="alert">{{ error() }}</p>
       }
 
       @if (loading()) {
-        <p class="text-sm text-zinc-500">Cargando…</p>
+        <div class="card space-y-3" aria-label="Cargando torneos">
+          <div class="skeleton h-5 w-2/3"></div>
+          <div class="skeleton h-5 w-1/2"></div>
+          <div class="skeleton h-5 w-3/5"></div>
+        </div>
       } @else if (tournaments().length === 0) {
-        <p class="rounded-lg bg-white p-6 text-sm text-zinc-500 shadow">
-          Todavía no has creado ningún torneo.
-        </p>
+        <div class="empty-state">
+          <svg class="h-10 w-10 text-stone-300 dark:text-stone-600" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M8 21h8M12 17v4M7 4h10v6a5 5 0 0 1-10 0V4Z" />
+            <path d="M7 6H4a1 1 0 0 0-1 1 4 4 0 0 0 4 4M17 6h3a1 1 0 0 1 1 1 4 4 0 0 1-4 4" />
+          </svg>
+          <p>Todavía no has creado ningún torneo.</p>
+          <p class="text-xs text-stone-400 dark:text-stone-500">Empieza con el botón «Crear torneo» de arriba.</p>
+        </div>
       } @else {
-        <div class="overflow-x-auto rounded-lg bg-white shadow">
-          <table class="w-full text-left text-sm">
-            <thead class="border-b border-zinc-200 text-xs uppercase text-zinc-500">
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
               <tr>
-                <th class="px-4 py-3">Torneo</th>
-                <th class="px-4 py-3">Inicio</th>
-                <th class="px-4 py-3">Estado</th>
-                <th class="px-4 py-3">Inscritos</th>
-                <th class="px-4 py-3">Acciones</th>
+                <th scope="col">Torneo</th>
+                <th scope="col">Inicio</th>
+                <th scope="col">Estado</th>
+                <th scope="col">Inscritos</th>
+                <th scope="col">Acciones</th>
               </tr>
             </thead>
             <tbody>
               @for (t of tournaments(); track t.slug) {
-                <tr class="border-b border-zinc-100">
-                  <td class="px-4 py-3 font-medium">{{ t.name }}</td>
-                  <td class="px-4 py-3 text-zinc-500">{{ t.startAt | date: 'd MMM y, HH:mm' }}</td>
-                  <td class="px-4 py-3">
-                    <span class="rounded-full bg-zinc-100 px-2 py-0.5 text-xs">{{ statusLabel(t) }}</span>
+                <tr>
+                  <td class="font-medium text-stone-900 dark:text-stone-100">{{ t.name }}</td>
+                  <td class="whitespace-nowrap text-stone-500 dark:text-stone-400">{{ t.startAt | date: 'd MMM y, HH:mm' }}</td>
+                  <td>
+                    <span [class]="t.status === 'registration_open' ? 'badge-success'
+                            : t.status === 'registration_closed' ? 'badge-warning'
+                            : t.status === 'in_progress' ? 'badge-brand'
+                            : t.status === 'cancelled' ? 'badge-danger'
+                            : 'badge-neutral'">
+                      {{ statusLabel(t) }}
+                    </span>
                   </td>
-                  <td class="px-4 py-3">{{ t.activeCount }} / {{ t.maxPlayers }}</td>
-                  <td class="px-4 py-3">
+                  <td class="whitespace-nowrap">{{ t.activeCount }} / {{ t.maxPlayers }}</td>
+                  <td>
                     <div class="flex flex-wrap gap-2">
                       @if (t.status === 'draft') {
-                        <button type="button" (click)="open(t)"
-                                class="rounded bg-indigo-600 px-3 py-1 text-xs font-semibold text-white hover:bg-indigo-500">
+                        <button type="button" (click)="open(t)" class="btn-primary btn-sm">
                           Abrir inscripciones
                         </button>
                       }
                       @if (t.status === 'registration_open') {
-                        <button type="button" (click)="close(t)"
-                                class="rounded bg-amber-500 px-3 py-1 text-xs font-semibold text-white hover:bg-amber-400">
+                        <button type="button" (click)="close(t)" class="btn-warning btn-sm">
                           Cerrar inscripciones
                         </button>
                       }
-                      @if (t.status !== 'draft') {
-                        <a [routerLink]="['/torneo', t.slug]"
-                           class="rounded border border-zinc-300 px-3 py-1 text-xs hover:bg-zinc-50">Ver pública</a>
+                      @if (t.status === 'registration_closed') {
+                        <button type="button" (click)="reopen(t)" class="btn-secondary btn-sm">
+                          Reabrir inscripciones
+                        </button>
                       }
-                      <a [routerLink]="['/admin/torneo', t.slug, 'rondas']"
-                         class="rounded border border-zinc-300 px-3 py-1 text-xs hover:bg-zinc-50">Rondas</a>
-                      <a [routerLink]="['/admin/torneos', t.slug, 'registros']"
-                         class="rounded border border-zinc-300 px-3 py-1 text-xs hover:bg-zinc-50">Registros</a>
+                      @if (t.status !== 'draft') {
+                        <a [routerLink]="['/torneo', t.slug]" class="btn-secondary btn-sm">Ver pública</a>
+                      }
+                      <a [routerLink]="['/admin/torneo', t.slug, 'rondas']" class="btn-secondary btn-sm">Rondas</a>
+                      <a [routerLink]="['/admin/torneos', t.slug, 'registros']" class="btn-secondary btn-sm">Registros</a>
+                      @if (t.status !== 'in_progress') {
+                        <button type="button" (click)="remove(t)" class="btn-danger-outline btn-sm"
+                                [attr.aria-label]="'Eliminar el torneo ' + t.name">
+                          Eliminar
+                        </button>
+                      }
                     </div>
                   </td>
                 </tr>
@@ -122,9 +150,39 @@ export default class AdminTournamentsPage implements OnInit {
   }
 
   protected async close(t: AdminTournament): Promise<void> {
+    const confirmed = window.confirm(
+      `¿Cerrar las inscripciones de «${t.name}»?\n\nLos jugadores ya no podrán inscribirse. ` +
+        'Podrás reabrirlas mientras no se hayan generado rondas.'
+    );
+    if (!confirmed) return;
     this.error.set(null);
     try {
       await this.service.closeRegistration(t.slug);
+      await this.reload();
+    } catch (e) {
+      this.error.set(apiErrorMessage(e));
+    }
+  }
+
+  protected async reopen(t: AdminTournament): Promise<void> {
+    this.error.set(null);
+    try {
+      await this.service.reopenRegistration(t.slug);
+      await this.reload();
+    } catch (e) {
+      this.error.set(apiErrorMessage(e));
+    }
+  }
+
+  protected async remove(t: AdminTournament): Promise<void> {
+    const confirmed = window.confirm(
+      `¿Eliminar el torneo «${t.name}»?\n\nEsta acción no se puede deshacer: el torneo ` +
+        'desaparecerá de la web junto a sus inscripciones y resultados.'
+    );
+    if (!confirmed) return;
+    this.error.set(null);
+    try {
+      await this.service.delete(t.slug);
       await this.reload();
     } catch (e) {
       this.error.set(apiErrorMessage(e));

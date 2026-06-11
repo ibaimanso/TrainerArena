@@ -19,39 +19,56 @@ export const TOURNAMENT_STATUS_LABELS: Record<string, string> = {
   imports: [RouterLink, RouterLinkActive, DatePipe],
   template: `
     @if (tournament(); as t) {
-      <header class="rounded-lg bg-white p-6 shadow">
-        <div class="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h1 class="text-2xl font-bold">{{ t.name }}</h1>
-            <p class="mt-1 text-sm text-zinc-500">
+      <header class="card sm:p-6">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          <div class="min-w-0">
+            <h1 class="page-title">{{ t.name }}</h1>
+            <p class="mt-1.5 flex items-center gap-1.5 text-sm text-stone-500 dark:text-stone-400">
+              <svg class="h-4 w-4 shrink-0 text-stone-400 dark:text-stone-500" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="3" y="4" width="18" height="18" rx="2" />
+                <path d="M16 2v4M8 2v4M3 10h18" />
+              </svg>
               {{ t.startAt | date: "EEEE d 'de' MMMM 'de' y, HH:mm" }}
             </p>
           </div>
-          <span class="rounded-full bg-indigo-50 px-3 py-1 text-sm font-semibold text-indigo-700">
-            {{ fee(t) }}
-          </span>
+          <div class="flex shrink-0 flex-wrap items-center gap-2">
+            <span [class]="t.status === 'registration_open' ? 'badge-success'
+                         : t.status === 'in_progress' ? 'badge-brand'
+                         : t.status === 'cancelled' ? 'badge-danger'
+                         : t.status === 'registration_closed' ? 'badge-warning'
+                         : 'badge-neutral'">
+              {{ statusLabel(t) }}
+            </span>
+            <span class="badge-brand">{{ fee(t) }}</span>
+          </div>
         </div>
 
-        <div class="mt-4">
-          <div class="flex items-center justify-between text-sm">
-            <span>{{ t.activeCount }} / {{ t.maxPlayers }} inscritos</span>
-            <span class="text-zinc-500">{{ statusLabel(t) }}</span>
+        <div class="mt-5">
+          <div class="flex items-center justify-between gap-3 text-sm">
+            <span class="text-stone-700 dark:text-stone-300">
+              <span class="font-mono font-semibold tabular-nums">{{ t.activeCount }} / {{ t.maxPlayers }}</span>
+              inscritos
+            </span>
           </div>
-          <div class="mt-1 h-2 overflow-hidden rounded-full bg-zinc-200">
-            <div class="h-full bg-indigo-600"
+          <div class="mt-1.5 h-2 overflow-hidden rounded-full bg-stone-200 dark:bg-stone-700" role="progressbar"
+               aria-label="Plazas ocupadas" aria-valuemin="0"
+               [attr.aria-valuenow]="t.activeCount" [attr.aria-valuemax]="t.maxPlayers">
+            <div class="h-full rounded-full bg-stone-900 transition-all"
                  [style.width.%]="(100 * t.activeCount) / t.maxPlayers"></div>
           </div>
         </div>
       </header>
 
-      <nav class="mt-4 flex gap-1 overflow-x-auto rounded-lg bg-white p-1 shadow">
-        <a [routerLink]="['/torneo', t.slug]" routerLinkActive="bg-indigo-600 text-white"
+      <nav class="mt-4 flex gap-1 overflow-x-auto rounded-xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-800 p-1.5 shadow-sm"
+           aria-label="Secciones del torneo">
+        <a [routerLink]="['/torneo', t.slug]" routerLinkActive ariaCurrentWhenActive="page"
            [routerLinkActiveOptions]="{ exact: true }"
-           class="rounded px-4 py-2 text-sm font-medium hover:bg-indigo-50">Torneo</a>
-        <a [routerLink]="['/torneo', t.slug, 'clasificacion']" routerLinkActive="bg-indigo-600 text-white"
-           class="rounded px-4 py-2 text-sm font-medium hover:bg-indigo-50">Clasificación</a>
-        <a [routerLink]="['/torneo', t.slug, 'ronda-actual']" routerLinkActive="bg-indigo-600 text-white"
-           class="rounded px-4 py-2 text-sm font-medium hover:bg-indigo-50">Ronda actual</a>
+           class="whitespace-nowrap rounded-lg px-4 py-2 text-sm font-medium text-stone-600 dark:text-stone-400 transition-colors hover:bg-stone-100 dark:hover:bg-stone-800 hover:text-stone-900 dark:hover:text-stone-100 aria-[current=page]:bg-stone-900 aria-[current=page]:text-white aria-[current=page]:hover:bg-stone-900 aria-[current=page]:hover:text-white">Torneo</a>
+        <a [routerLink]="['/torneo', t.slug, 'clasificacion']" routerLinkActive ariaCurrentWhenActive="page"
+           class="whitespace-nowrap rounded-lg px-4 py-2 text-sm font-medium text-stone-600 dark:text-stone-400 transition-colors hover:bg-stone-100 dark:hover:bg-stone-800 hover:text-stone-900 dark:hover:text-stone-100 aria-[current=page]:bg-stone-900 aria-[current=page]:text-white aria-[current=page]:hover:bg-stone-900 aria-[current=page]:hover:text-white">Clasificación</a>
+        <a [routerLink]="['/torneo', t.slug, 'ronda-actual']" routerLinkActive ariaCurrentWhenActive="page"
+           class="whitespace-nowrap rounded-lg px-4 py-2 text-sm font-medium text-stone-600 dark:text-stone-400 transition-colors hover:bg-stone-100 dark:hover:bg-stone-800 hover:text-stone-900 dark:hover:text-stone-100 aria-[current=page]:bg-stone-900 aria-[current=page]:text-white aria-[current=page]:hover:bg-stone-900 aria-[current=page]:hover:text-white">Ronda actual</a>
       </nav>
     }
   `,

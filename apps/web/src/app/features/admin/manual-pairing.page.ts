@@ -9,43 +9,37 @@ import { RoundsService, type ManualPairingState } from '../../core/rounds.servic
 @Component({
   imports: [FormsModule, RouterLink],
   template: `
-    <div class="mx-auto max-w-2xl space-y-4">
-      <h1 class="text-2xl font-bold">Pareo manual</h1>
+    <div class="mx-auto max-w-2xl space-y-6">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <h1 class="page-title">Pareo manual</h1>
+        <a routerLink="/admin/torneos" class="link text-sm">Volver a mis torneos</a>
+      </div>
 
       @if (error()) {
-        <p class="rounded bg-red-50 px-3 py-2 text-sm text-red-700">{{ error() }}</p>
+        <p class="alert-error" role="alert">{{ error() }}</p>
       }
 
       @if (state(); as s) {
-        <p class="text-sm text-zinc-600">
-          Ronda {{ s.round.roundNumber }} ({{ s.round.phase === 'swiss' ? 'suiza' : 'top cut' }}) —
-          estado: {{ s.round.status === 'pending' ? 'pendiente' : s.round.status }}
+        <p class="flex flex-wrap items-center gap-2 text-sm text-stone-600 dark:text-stone-400">
+          <span class="font-semibold text-stone-900 dark:text-stone-100">Ronda {{ s.round.roundNumber }}</span>
+          <span [class]="s.round.phase === 'swiss' ? 'badge-neutral' : 'badge-brand'">
+            {{ s.round.phase === 'swiss' ? 'Suiza' : 'Top cut' }}
+          </span>
+          <span [class]="s.round.status === 'pending' ? 'badge-warning' : 'badge-neutral'">
+            {{ s.round.status === 'pending' ? 'Pendiente' : s.round.status }}
+          </span>
         </p>
 
-        <section class="rounded-lg bg-white p-4 shadow">
-          <h2 class="text-sm font-semibold">Mesas creadas</h2>
-          <ul class="mt-2 space-y-1 text-sm">
-            @for (m of s.matches; track m.tableNumber) {
-              <li class="flex items-center gap-2">
-                <span class="w-14 text-zinc-400">Mesa {{ m.tableNumber }}</span>
-                <span>{{ m.playerA.name }}</span>
-                <span class="text-zinc-400">vs</span>
-                <span>{{ m.playerB?.name ?? 'BYE' }}</span>
-              </li>
-            } @empty {
-              <li class="text-zinc-500">Sin mesas todavía.</li>
-            }
-          </ul>
-        </section>
-
         @if (s.round.status === 'pending' && s.unpaired.length > 0) {
-          <section class="space-y-3 rounded-lg bg-white p-4 shadow">
-            <h2 class="text-sm font-semibold">Jugadores sin mesa ({{ s.unpaired.length }})</h2>
-            <div class="grid grid-cols-2 gap-3">
+          <section class="card space-y-4" aria-labelledby="titulo-sin-mesa">
+            <h2 id="titulo-sin-mesa" class="section-title">
+              Jugadores sin mesa
+              <span class="badge-warning ml-1">{{ s.unpaired.length }}</span>
+            </h2>
+            <div class="grid gap-4 sm:grid-cols-2">
               <div>
-                <label for="playerA" class="mb-1 block text-xs font-medium text-zinc-500">Jugador A</label>
-                <select id="playerA" [(ngModel)]="playerAId"
-                        class="w-full rounded border border-zinc-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none">
+                <label for="playerA" class="label">Jugador A</label>
+                <select id="playerA" [(ngModel)]="playerAId" required class="input">
                   <option [ngValue]="null">— Selecciona —</option>
                   @for (p of s.unpaired; track p.id) {
                     <option [ngValue]="p.id">{{ p.name }}</option>
@@ -53,35 +47,74 @@ import { RoundsService, type ManualPairingState } from '../../core/rounds.servic
                 </select>
               </div>
               <div>
-                <label for="playerB" class="mb-1 block text-xs font-medium text-zinc-500">Jugador B</label>
-                <select id="playerB" [(ngModel)]="playerBId"
-                        class="w-full rounded border border-zinc-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none">
+                <label for="playerB" class="label">Jugador B</label>
+                <select id="playerB" [(ngModel)]="playerBId" class="input">
                   <option [ngValue]="null">BYE</option>
                   @for (p of s.unpaired; track p.id) {
                     <option [ngValue]="p.id">{{ p.name }}</option>
                   }
                 </select>
+                <p class="hint">Deja «BYE» para dar la ronda ganada al jugador A.</p>
               </div>
             </div>
             @if (rematchWarning()) {
-              <div class="rounded bg-amber-50 px-3 py-2 text-sm text-amber-800">
-                {{ rematchWarning() }}
-                <button type="button" (click)="add(true)"
-                        class="ml-2 rounded bg-amber-500 px-2 py-1 text-xs font-semibold text-white hover:bg-amber-400">
+              <div class="alert-warning flex flex-wrap items-center justify-between gap-3" role="alert">
+                <span>{{ rematchWarning() }}</span>
+                <button type="button" (click)="add(true)" [disabled]="busy()" class="btn-warning btn-sm">
                   Forzar rematch
                 </button>
               </div>
             }
             <button type="button" (click)="add(false)" [disabled]="playerAId === null || busy()"
-                    class="rounded bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 disabled:opacity-50">
-              Añadir mesa
+                    class="btn-primary">
+              {{ busy() ? 'Añadiendo…' : 'Añadir mesa' }}
             </button>
           </section>
         }
 
-        <a routerLink="/admin/torneos" class="inline-block text-sm text-indigo-600 hover:underline">
-          Volver a mis torneos
-        </a>
+        <section aria-labelledby="titulo-mesas" class="space-y-3">
+          <h2 id="titulo-mesas" class="section-title">Mesas creadas</h2>
+          @if (s.matches.length === 0) {
+            <div class="empty-state">
+              <svg class="h-10 w-10 text-stone-300 dark:text-stone-600" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+              </svg>
+              <p>Sin mesas todavía.</p>
+              <p class="text-xs text-stone-400 dark:text-stone-500">Las mesas que parees aparecerán aquí.</p>
+            </div>
+          } @else {
+            <div class="table-wrap">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th scope="col">Mesa</th>
+                    <th scope="col">Jugador A</th>
+                    <th scope="col">Jugador B</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (m of s.matches; track m.tableNumber) {
+                    <tr>
+                      <td class="font-medium text-stone-500 dark:text-stone-400">{{ m.tableNumber }}</td>
+                      <td class="font-medium text-stone-900 dark:text-stone-100">{{ m.playerA.name }}</td>
+                      <td>
+                        @if (m.playerB) {
+                          <span class="font-medium text-stone-900 dark:text-stone-100">{{ m.playerB.name }}</span>
+                        } @else {
+                          <span class="badge-neutral">BYE</span>
+                        }
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </section>
       }
     </div>
   `,

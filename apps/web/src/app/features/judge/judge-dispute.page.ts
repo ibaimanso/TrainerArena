@@ -9,62 +9,100 @@ import { JudgeService, type DisputeDetail } from '../../core/judge.service';
 @Component({
   imports: [FormsModule, RouterLink, DatePipe],
   template: `
-    <div class="mx-auto max-w-xl space-y-4">
-      <div class="flex items-center justify-between">
-        <h1 class="text-2xl font-bold">Resolver disputa</h1>
-        <a routerLink="/juez/cola" class="text-sm text-indigo-600 hover:underline">Volver a la cola</a>
+    <div class="mx-auto max-w-2xl space-y-6">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <h1 class="page-title">Resolver disputa</h1>
+        <a routerLink="/juez/cola" class="link text-sm">← Volver a la cola</a>
       </div>
 
       @if (error()) {
-        <p class="rounded bg-red-50 px-3 py-2 text-sm text-red-700">{{ error() }}</p>
+        <p class="alert-error" role="alert">{{ error() }}</p>
       }
 
       @if (dispute(); as d) {
-        <div class="rounded-lg bg-white p-4 shadow">
-          <p class="text-sm font-semibold">
-            {{ d.match.tournamentName }} · R{{ d.match.roundNumber }} · Mesa {{ d.match.tableNumber }}
+        <section class="card" aria-labelledby="titulo-partida">
+          <h2 id="titulo-partida" class="section-title">
+            Mesa {{ d.match.tableNumber }}
+            <span class="font-medium text-stone-500 dark:text-stone-400">· {{ d.match.tournamentName }} · Ronda {{ d.match.roundNumber }}</span>
+          </h2>
+          <p class="mt-2 text-sm text-stone-600 dark:text-stone-400">
+            <span class="badge-neutral mr-1">A</span>{{ d.match.playerA?.name }}
+            <span class="mx-2 text-stone-400 dark:text-stone-500">vs</span>
+            <span class="badge-neutral mr-1">B</span>{{ d.match.playerB?.name ?? '—' }}
           </p>
-          <p class="mt-1 text-sm text-zinc-600">
-            <strong>A:</strong> {{ d.match.playerA?.name }} ·
-            <strong>B:</strong> {{ d.match.playerB?.name ?? '—' }}
-          </p>
-        </div>
+        </section>
 
-        <div class="rounded-lg bg-white p-4 shadow">
-          <h2 class="text-sm font-semibold">Reportes enfrentados</h2>
-          <ul class="mt-2 space-y-2">
+        <section aria-labelledby="titulo-reportes">
+          <h2 id="titulo-reportes" class="section-title mb-3">Reportes enfrentados</h2>
+          <div class="grid gap-3 sm:grid-cols-2">
             @for (r of d.reports; track r.reporter.id) {
-              <li class="rounded border border-zinc-200 px-3 py-2 text-sm">
-                <strong>{{ r.reporter.name }}</strong> reportó
-                <span class="font-medium">{{ resultLabel(r.result) }}</span>
-                @if (r.score) { ({{ r.score }}) }
-                <span class="text-xs text-zinc-400"> · {{ r.reportedAt | date: 'HH:mm:ss' }}</span>
-              </li>
+              <div class="card border-l-4 border-l-amber-400">
+                <p class="text-sm font-semibold text-stone-900 dark:text-stone-100">{{ r.reporter.name }}</p>
+                <p class="mt-2">
+                  <span [class]="r.result === 'win' ? 'badge-success' : r.result === 'loss' ? 'badge-danger' : 'badge-neutral'">
+                    Reportó {{ resultLabel(r.result) }}
+                  </span>
+                  @if (r.score) {
+                    <span class="ml-2 font-mono text-sm font-semibold text-stone-700 dark:text-stone-300">{{ r.score }}</span>
+                  }
+                </p>
+                <p class="mt-2 text-xs text-stone-400 dark:text-stone-500">Enviado a las {{ r.reportedAt | date: 'HH:mm:ss' }}</p>
+              </div>
             }
-          </ul>
-        </div>
+          </div>
+        </section>
 
-        <form (ngSubmit)="resolve()" class="space-y-3 rounded-lg bg-white p-4 shadow">
-          <h2 class="text-sm font-semibold">Resolución</h2>
+        <form (ngSubmit)="resolve()" class="card space-y-5" aria-labelledby="titulo-resolucion">
+          <h2 id="titulo-resolucion" class="section-title">Resolución</h2>
+
+          <fieldset>
+            <legend class="label">Resultado oficial</legend>
+            <div class="grid gap-2 sm:grid-cols-2">
+              <label class="flex cursor-pointer items-center gap-3 rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 px-4 py-3 text-sm font-medium text-stone-700 dark:text-stone-300 shadow-sm transition-colors hover:bg-stone-50 dark:hover:bg-stone-800/40 has-[:checked]:border-stone-900 has-[:checked]:bg-stone-50 has-[:checked]:text-stone-900">
+                <input type="radio" name="result" value="a_wins" [(ngModel)]="result"
+                       class="h-4 w-4 shrink-0 border-stone-300 dark:border-stone-700 text-stone-900 dark:text-stone-100" />
+                <span>Victoria de {{ d.match.playerA?.name }} (A)</span>
+              </label>
+              <label class="flex cursor-pointer items-center gap-3 rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 px-4 py-3 text-sm font-medium text-stone-700 dark:text-stone-300 shadow-sm transition-colors hover:bg-stone-50 dark:hover:bg-stone-800/40 has-[:checked]:border-stone-900 has-[:checked]:bg-stone-50 has-[:checked]:text-stone-900">
+                <input type="radio" name="result" value="b_wins" [(ngModel)]="result"
+                       class="h-4 w-4 shrink-0 border-stone-300 dark:border-stone-700 text-stone-900 dark:text-stone-100" />
+                <span>Victoria de {{ d.match.playerB?.name }} (B)</span>
+              </label>
+              <label class="flex cursor-pointer items-center gap-3 rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 px-4 py-3 text-sm font-medium text-stone-700 dark:text-stone-300 shadow-sm transition-colors hover:bg-stone-50 dark:hover:bg-stone-800/40 has-[:checked]:border-stone-900 has-[:checked]:bg-stone-50 has-[:checked]:text-stone-900">
+                <input type="radio" name="result" value="draw" [(ngModel)]="result"
+                       class="h-4 w-4 shrink-0 border-stone-300 dark:border-stone-700 text-stone-900 dark:text-stone-100" />
+                <span>Empate</span>
+              </label>
+              <label class="flex cursor-pointer items-center gap-3 rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 px-4 py-3 text-sm font-medium text-stone-700 dark:text-stone-300 shadow-sm transition-colors hover:bg-stone-50 dark:hover:bg-stone-800/40 has-[:checked]:border-stone-900 has-[:checked]:bg-stone-50 has-[:checked]:text-stone-900">
+                <input type="radio" name="result" value="forfeit_a" [(ngModel)]="result"
+                       class="h-4 w-4 shrink-0 border-stone-300 dark:border-stone-700 text-stone-900 dark:text-stone-100" />
+                <span>Forfeit de A (gana B)</span>
+              </label>
+              <label class="flex cursor-pointer items-center gap-3 rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 px-4 py-3 text-sm font-medium text-stone-700 dark:text-stone-300 shadow-sm transition-colors hover:bg-stone-50 dark:hover:bg-stone-800/40 has-[:checked]:border-stone-900 has-[:checked]:bg-stone-50 has-[:checked]:text-stone-900">
+                <input type="radio" name="result" value="forfeit_b" [(ngModel)]="result"
+                       class="h-4 w-4 shrink-0 border-stone-300 dark:border-stone-700 text-stone-900 dark:text-stone-100" />
+                <span>Forfeit de B (gana A)</span>
+              </label>
+              <label class="flex cursor-pointer items-center gap-3 rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 px-4 py-3 text-sm font-medium text-stone-700 dark:text-stone-300 shadow-sm transition-colors hover:bg-stone-50 dark:hover:bg-stone-800/40 has-[:checked]:border-stone-900 has-[:checked]:bg-stone-50 has-[:checked]:text-stone-900">
+                <input type="radio" name="result" value="forfeit_both" [(ngModel)]="result"
+                       class="h-4 w-4 shrink-0 border-stone-300 dark:border-stone-700 text-stone-900 dark:text-stone-100" />
+                <span>Doble forfeit (pierden ambos)</span>
+              </label>
+            </div>
+          </fieldset>
+
           <div>
-            <label for="result" class="mb-1 block text-xs font-medium text-zinc-500">Resultado</label>
-            <select id="result" [(ngModel)]="result" name="result"
-                    class="w-full rounded border border-zinc-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none">
-              <option value="a_wins">Victoria de {{ d.match.playerA?.name }} (A)</option>
-              <option value="b_wins">Victoria de {{ d.match.playerB?.name }} (B)</option>
-              <option value="draw">Empate</option>
-              <option value="forfeit_a">Forfeit de A (gana B)</option>
-              <option value="forfeit_b">Forfeit de B (gana A)</option>
-              <option value="forfeit_both">Doble forfeit (pierden ambos)</option>
-            </select>
-          </div>
-          <div>
-            <label for="score" class="mb-1 block text-xs font-medium text-zinc-500">Marcador (opcional)</label>
+            <label for="score" class="label">Marcador (opcional)</label>
             <input id="score" type="text" [(ngModel)]="score" name="score" maxlength="20" placeholder="2-1"
-                   class="w-full rounded border border-zinc-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none" />
+                   class="input font-mono sm:max-w-[10rem]" />
+            <p class="hint">Por ejemplo, 2-1 en un mejor de tres.</p>
           </div>
-          <button type="submit" [disabled]="busy()"
-                  class="w-full rounded bg-indigo-600 px-4 py-2 font-semibold text-white hover:bg-indigo-500 disabled:opacity-50">
+
+          <p class="alert-warning" role="alert">
+            <strong>Atención:</strong> la decisión del juez es definitiva y sustituye a ambos reportes.
+          </p>
+
+          <button type="submit" [disabled]="busy()" class="btn-primary w-full">
             {{ busy() ? 'Resolviendo…' : 'Resolver disputa' }}
           </button>
         </form>

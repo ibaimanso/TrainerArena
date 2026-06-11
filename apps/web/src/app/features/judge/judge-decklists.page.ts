@@ -17,42 +17,64 @@ interface DecklistRow {
 @Component({
   imports: [RouterLink, DatePipe],
   template: `
-    <div class="space-y-4">
-      <h1 class="text-2xl font-bold">Decklists del torneo</h1>
-      @if (error()) {
-        <p class="rounded bg-red-50 px-3 py-2 text-sm text-red-700">{{ error() }}</p>
-      }
-      <div class="overflow-x-auto rounded-lg bg-white shadow">
-        <table class="w-full text-left text-sm">
-          <thead class="border-b border-zinc-200 text-xs uppercase text-zinc-500">
-            <tr>
-              <th class="px-4 py-3">Jugador</th>
-              <th class="px-4 py-3">Cartas</th>
-              <th class="px-4 py-3">Enviada</th>
-              <th class="px-4 py-3">Bloqueada</th>
-              <th class="px-4 py-3"></th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (d of decklists(); track d.userId) {
-              <tr class="border-b border-zinc-100">
-                <td class="px-4 py-3 font-medium">{{ d.playerName }}</td>
-                <td class="px-4 py-3">{{ d.total }}</td>
-                <td class="px-4 py-3 text-zinc-500">{{ d.submittedAt | date: 'd MMM, HH:mm' }}</td>
-                <td class="px-4 py-3 text-zinc-500">
-                  @if (d.lockedAt) { {{ d.lockedAt | date: 'd MMM, HH:mm' }} } @else { — }
-                </td>
-                <td class="px-4 py-3">
-                  <a [routerLink]="['/juez/torneo', slug(), 'decklists', d.userId]"
-                     class="text-indigo-600 hover:underline">Ver</a>
-                </td>
-              </tr>
-            } @empty {
-              <tr><td colspan="5" class="px-4 py-6 text-center text-zinc-500">Sin decklists todavía.</td></tr>
-            }
-          </tbody>
-        </table>
+    <div class="space-y-6">
+      <div>
+        <h1 class="page-title">Decklists del torneo</h1>
+        <p class="mt-1 text-sm text-stone-500 dark:text-stone-400">
+          Listas enviadas por los jugadores, con su recuento de cartas y fecha de bloqueo.
+        </p>
       </div>
+
+      @if (error()) {
+        <p class="alert-error" role="alert">{{ error() }}</p>
+      }
+
+      @if (decklists().length === 0) {
+        <div class="empty-state">
+          <svg class="h-10 w-10 text-stone-300 dark:text-stone-600" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <path d="M14 2v6h6M9 13h6M9 17h6" />
+          </svg>
+          <p>Sin decklists todavía.</p>
+          <p class="text-xs text-stone-400 dark:text-stone-500">Aparecerán aquí cuando los jugadores las envíen.</p>
+        </div>
+      } @else {
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th scope="col">Jugador</th>
+                <th scope="col">Cartas</th>
+                <th scope="col">Enviada</th>
+                <th scope="col">Bloqueada</th>
+                <th scope="col"><span class="sr-only">Acciones</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (d of decklists(); track d.userId) {
+                <tr>
+                  <td class="font-medium text-stone-900 dark:text-stone-100">{{ d.playerName }}</td>
+                  <td class="font-mono tabular-nums">{{ d.total }}</td>
+                  <td class="text-stone-500 dark:text-stone-400">{{ d.submittedAt | date: 'd MMM, HH:mm' }}</td>
+                  <td class="text-stone-500 dark:text-stone-400">
+                    @if (d.lockedAt) {
+                      {{ d.lockedAt | date: 'd MMM, HH:mm' }}
+                    } @else {
+                      <span class="badge-neutral">Sin bloquear</span>
+                    }
+                  </td>
+                  <td class="text-right">
+                    <a [routerLink]="['/juez/torneo', slug(), 'decklists', d.userId]"
+                       class="btn-secondary btn-sm"
+                       [attr.aria-label]="'Ver decklist de ' + d.playerName">Ver</a>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
     </div>
   `,
 })

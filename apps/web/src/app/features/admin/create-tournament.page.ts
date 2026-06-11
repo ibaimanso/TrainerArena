@@ -12,64 +12,82 @@ import { TournamentsService } from '../../core/tournaments.service';
 @Component({
   imports: [ReactiveFormsModule, RouterLink],
   template: `
-    <div class="mx-auto max-w-2xl space-y-4">
-      <h1 class="text-2xl font-bold">Crear torneo</h1>
+    <div class="mx-auto max-w-2xl space-y-6">
+      <div>
+        <h1 class="page-title">Crear torneo</h1>
+        <p class="mt-1 text-sm text-stone-500 dark:text-stone-400">Completa los 4 pasos para publicar tu torneo.</p>
+      </div>
 
-      <ol class="flex gap-2 text-xs">
-        @for (label of stepLabels; track $index) {
-          <li class="flex-1 rounded px-2 py-1.5 text-center font-medium"
-              [class]="$index === step() ? 'bg-indigo-600 text-white' : $index < step() ? 'bg-indigo-100 text-indigo-700' : 'bg-zinc-100 text-zinc-500'">
-            {{ $index + 1 }}. {{ label }}
-          </li>
-        }
-      </ol>
+      <nav aria-label="Pasos del formulario">
+        <ol class="flex gap-2 text-xs">
+          @for (label of stepLabels; track $index) {
+            <li class="flex-1 rounded-lg px-2 py-2 text-center font-medium"
+                [class]="$index === step() ? 'bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900' : $index < step() ? 'bg-green-50 dark:bg-green-950/40 text-green-800 dark:text-green-300' : 'bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400'"
+                [attr.aria-current]="$index === step() ? 'step' : null">
+              <span class="inline-flex items-center justify-center gap-1">
+                @if ($index < step()) {
+                  <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M20 6 9 17l-5-5" />
+                  </svg>
+                  <span class="sr-only">Completado:</span>
+                } @else {
+                  <span aria-hidden="true">{{ $index + 1 }}.</span>
+                }
+                {{ label }}
+              </span>
+            </li>
+          }
+        </ol>
+      </nav>
 
       @if (error()) {
-        <p class="rounded bg-red-50 px-3 py-2 text-sm text-red-700">{{ error() }}</p>
+        <p class="alert-error" role="alert">{{ error() }}</p>
       }
 
-      <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-4 rounded-lg bg-white p-6 shadow">
+      <form [formGroup]="form" (ngSubmit)="submit()" class="card space-y-5">
         @switch (step()) {
           @case (0) {
-            <div class="space-y-4">
+            <div class="space-y-5">
+              <h2 class="section-title">Datos básicos</h2>
               <div>
-                <label for="name" class="mb-1 block text-sm font-medium">Nombre del torneo</label>
-                <input id="name" type="text" formControlName="name" maxlength="255"
-                       class="w-full rounded border border-zinc-300 px-3 py-2 focus:border-indigo-500 focus:outline-none" />
+                <label for="name" class="label">Nombre del torneo</label>
+                <input id="name" type="text" formControlName="name" maxlength="255" required class="input" />
+                <p class="hint">Es el nombre público que verán los jugadores.</p>
               </div>
               <div>
-                <label for="description" class="mb-1 block text-sm font-medium">Descripción (opcional)</label>
-                <textarea id="description" formControlName="description" rows="4"
-                          class="w-full rounded border border-zinc-300 px-3 py-2 focus:border-indigo-500 focus:outline-none"></textarea>
+                <label for="description" class="label">Descripción (opcional)</label>
+                <textarea id="description" formControlName="description" rows="4" class="input"></textarea>
+                <p class="hint">Reglas, premios, enlaces… cualquier información útil para los participantes.</p>
               </div>
               <div>
-                <label for="startAt" class="mb-1 block text-sm font-medium">Fecha y hora de inicio</label>
-                <input id="startAt" type="datetime-local" formControlName="startAt"
-                       class="w-full rounded border border-zinc-300 px-3 py-2 focus:border-indigo-500 focus:outline-none" />
+                <label for="startAt" class="label">Fecha y hora de inicio</label>
+                <input id="startAt" type="datetime-local" formControlName="startAt" required class="input" />
+                <p class="hint">Se interpreta en tu zona horaria local.</p>
               </div>
             </div>
           }
           @case (1) {
-            <div class="space-y-4">
+            <div class="space-y-5">
+              <h2 class="section-title">Capacidad y formato</h2>
               <div>
-                <label for="maxPlayers" class="mb-1 block text-sm font-medium">Máximo de jugadores (4–9999)</label>
+                <label for="maxPlayers" class="label">Máximo de jugadores (4–9999)</label>
                 <input id="maxPlayers" type="number" formControlName="maxPlayers" min="4" max="9999"
-                       (change)="autofill()"
-                       class="w-full rounded border border-zinc-300 px-3 py-2 focus:border-indigo-500 focus:outline-none" />
-                <p class="mt-1 text-xs text-zinc-500">
+                       (change)="autofill()" required class="input" />
+                <p class="hint">
                   Las rondas y el top cut se rellenan según la tabla oficial; puedes modificarlos.
                 </p>
               </div>
-              <div class="grid grid-cols-2 gap-4">
+              <div class="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label for="swissRounds" class="mb-1 block text-sm font-medium">Rondas suizas (1–15)</label>
+                  <label for="swissRounds" class="label">Rondas suizas (1–15)</label>
                   <input id="swissRounds" type="number" formControlName="swissRounds" min="1" max="15"
-                         class="w-full rounded border border-zinc-300 px-3 py-2 focus:border-indigo-500 focus:outline-none" />
+                         required class="input" />
+                  <p class="hint">Número de rondas de la fase suiza.</p>
                 </div>
                 <div>
-                  <label for="topCutSize" class="mb-1 block text-sm font-medium">Top cut</label>
-                  <select id="topCutSize" formControlName="topCutSize"
-                          class="w-full rounded border border-zinc-300 px-3 py-2 focus:border-indigo-500 focus:outline-none">
+                  <label for="topCutSize" class="label">Top cut</label>
+                  <select id="topCutSize" formControlName="topCutSize" class="input">
                     <option [value]="0">Sin top cut</option>
                     <option [value]="4">Top 4</option>
                     <option [value]="8">Top 8</option>
@@ -77,77 +95,126 @@ import { TournamentsService } from '../../core/tournaments.service';
                     <option [value]="32">Top 32</option>
                     <option [value]="64">Top 64</option>
                   </select>
+                  <p class="hint">Eliminatoria final entre los mejores clasificados.</p>
                 </div>
                 <div>
-                  <label for="swissBo" class="mb-1 block text-sm font-medium">Suizas al mejor de</label>
-                  <select id="swissBo" formControlName="swissBo"
-                          class="w-full rounded border border-zinc-300 px-3 py-2 focus:border-indigo-500 focus:outline-none">
+                  <label for="swissBo" class="label">Suizas al mejor de</label>
+                  <select id="swissBo" formControlName="swissBo" class="input">
                     <option [value]="1">BO1</option>
                     <option [value]="3">BO3</option>
                   </select>
+                  <p class="hint">BO1: una partida por ronda. BO3: al mejor de tres.</p>
                 </div>
                 <div>
-                  <label for="topCutBo" class="mb-1 block text-sm font-medium">Top cut al mejor de</label>
-                  <select id="topCutBo" formControlName="topCutBo"
-                          class="w-full rounded border border-zinc-300 px-3 py-2 focus:border-indigo-500 focus:outline-none">
+                  <label for="topCutBo" class="label">Top cut al mejor de</label>
+                  <select id="topCutBo" formControlName="topCutBo" class="input">
                     <option [value]="1">BO1</option>
                     <option [value]="3">BO3</option>
                   </select>
+                  <p class="hint">Formato de las rondas eliminatorias.</p>
                 </div>
               </div>
             </div>
           }
           @case (2) {
-            <div class="grid grid-cols-2 gap-4">
-              <div>
-                <label for="roundTimeMinutes" class="mb-1 block text-sm font-medium">Tiempo por ronda (10–240 min)</label>
-                <input id="roundTimeMinutes" type="number" formControlName="roundTimeMinutes" min="10" max="240"
-                       class="w-full rounded border border-zinc-300 px-3 py-2 focus:border-indigo-500 focus:outline-none" />
-                <p class="mt-1 text-xs text-zinc-500">Solo aplica a las rondas suizas; el top cut no tiene límite.</p>
-              </div>
-              <div>
-                <label for="checkinMinutes" class="mb-1 block text-sm font-medium">Ventana de check-in (1–60 min)</label>
-                <input id="checkinMinutes" type="number" formControlName="checkinMinutes" min="1" max="60"
-                       class="w-full rounded border border-zinc-300 px-3 py-2 focus:border-indigo-500 focus:outline-none" />
+            <div class="space-y-5">
+              <h2 class="section-title">Tiempos</h2>
+              <div class="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label for="roundTimeMinutes" class="label">Tiempo por ronda (10–240 min)</label>
+                  <input id="roundTimeMinutes" type="number" formControlName="roundTimeMinutes" min="10" max="240"
+                         required class="input" />
+                  <p class="hint">Solo aplica a las rondas suizas; el top cut no tiene límite.</p>
+                </div>
+                <div>
+                  <label for="checkinMinutes" class="label">Ventana de check-in (1–60 min)</label>
+                  <input id="checkinMinutes" type="number" formControlName="checkinMinutes" min="1" max="60"
+                         required class="input" />
+                  <p class="hint">Minutos para confirmar asistencia antes del inicio.</p>
+                </div>
               </div>
             </div>
           }
           @case (3) {
-            <div class="space-y-4">
+            <div class="space-y-5">
+              <h2 class="section-title">Pago e inscripción</h2>
               <div>
-                <label for="feeEuros" class="mb-1 block text-sm font-medium">Cuota de inscripción (EUR)</label>
+                <label for="feeEuros" class="label">Cuota de inscripción (EUR)</label>
                 <input id="feeEuros" type="number" formControlName="feeEuros" min="0" max="10000" step="0.01"
-                       class="w-full rounded border border-zinc-300 px-3 py-2 focus:border-indigo-500 focus:outline-none" />
-                <p class="mt-1 text-xs text-zinc-500">0 = torneo gratuito.</p>
+                       required class="input" />
+                <p class="hint">Introduce 0 para un torneo gratuito.</p>
               </div>
               @if (isPaid()) {
                 <div>
-                  <label for="paypalAccount" class="mb-1 block text-sm font-medium">Cuenta PayPal (email)</label>
-                  <input id="paypalAccount" type="email" formControlName="paypalAccount"
-                         class="w-full rounded border border-zinc-300 px-3 py-2 focus:border-indigo-500 focus:outline-none" />
-                  <p class="mt-1 text-xs text-zinc-500">Obligatoria en torneos de pago.</p>
+                  <label for="paypalAccount" class="label">Cuenta PayPal (email)</label>
+                  <input id="paypalAccount" type="email" formControlName="paypalAccount" required class="input" />
+                  <p class="hint">Email de la cuenta PayPal que recibirá los pagos. Obligatoria en torneos de pago.</p>
                 </div>
               }
+
+              <section class="rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-800/40 p-4" aria-labelledby="resumen-torneo">
+                <h3 id="resumen-torneo" class="text-sm font-semibold text-stone-900 dark:text-stone-100">Resumen del torneo</h3>
+                <dl class="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 text-sm sm:grid-cols-3">
+                  <div class="col-span-2 sm:col-span-3">
+                    <dt class="text-xs text-stone-500 dark:text-stone-400">Nombre</dt>
+                    <dd class="font-medium text-stone-900 dark:text-stone-100">{{ form.controls.name.value || '—' }}</dd>
+                  </div>
+                  <div>
+                    <dt class="text-xs text-stone-500 dark:text-stone-400">Jugadores</dt>
+                    <dd class="font-medium text-stone-900 dark:text-stone-100">Hasta {{ form.controls.maxPlayers.value }}</dd>
+                  </div>
+                  <div>
+                    <dt class="text-xs text-stone-500 dark:text-stone-400">Rondas suizas</dt>
+                    <dd class="font-medium text-stone-900 dark:text-stone-100">
+                      {{ form.controls.swissRounds.value }} (BO{{ form.controls.swissBo.value }})
+                    </dd>
+                  </div>
+                  <div>
+                    <dt class="text-xs text-stone-500 dark:text-stone-400">Top cut</dt>
+                    <dd class="font-medium text-stone-900 dark:text-stone-100">
+                      @if (+form.controls.topCutSize.value > 0) {
+                        Top {{ form.controls.topCutSize.value }} (BO{{ form.controls.topCutBo.value }})
+                      } @else {
+                        Sin top cut
+                      }
+                    </dd>
+                  </div>
+                  <div>
+                    <dt class="text-xs text-stone-500 dark:text-stone-400">Tiempo por ronda</dt>
+                    <dd class="font-medium text-stone-900 dark:text-stone-100">{{ form.controls.roundTimeMinutes.value }} min</dd>
+                  </div>
+                  <div>
+                    <dt class="text-xs text-stone-500 dark:text-stone-400">Check-in</dt>
+                    <dd class="font-medium text-stone-900 dark:text-stone-100">{{ form.controls.checkinMinutes.value }} min</dd>
+                  </div>
+                  <div>
+                    <dt class="text-xs text-stone-500 dark:text-stone-400">Inscripción</dt>
+                    <dd>
+                      @if (isPaid()) {
+                        <span class="badge-brand">{{ form.controls.feeEuros.value }} € por jugador</span>
+                      } @else {
+                        <span class="badge-success">Gratuita</span>
+                      }
+                    </dd>
+                  </div>
+                </dl>
+              </section>
             </div>
           }
         }
 
-        <div class="flex justify-between border-t border-zinc-100 pt-4">
+        <div class="flex flex-wrap justify-between gap-3 border-t border-stone-100 dark:border-stone-800 pt-4">
           @if (step() > 0) {
-            <button type="button" (click)="step.set(step() - 1)"
-                    class="rounded border border-zinc-300 px-4 py-2 text-sm hover:bg-zinc-50">Anterior</button>
+            <button type="button" (click)="step.set(step() - 1)" class="btn-secondary">Anterior</button>
           } @else {
-            <a routerLink="/admin/torneos"
-               class="rounded border border-zinc-300 px-4 py-2 text-sm hover:bg-zinc-50">Cancelar</a>
+            <a routerLink="/admin/torneos" class="btn-secondary">Cancelar</a>
           }
           @if (step() < 3) {
-            <button type="button" (click)="next()" [disabled]="!stepValid()"
-                    class="rounded bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 disabled:opacity-50">
+            <button type="button" (click)="next()" [disabled]="!stepValid()" class="btn-primary">
               Siguiente
             </button>
           } @else {
-            <button type="submit" [disabled]="form.invalid || saving()"
-                    class="rounded bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 disabled:opacity-50">
+            <button type="submit" [disabled]="form.invalid || saving()" class="btn-primary">
               {{ saving() ? 'Creando…' : 'Crear torneo' }}
             </button>
           }
