@@ -1,4 +1,4 @@
-// AppTorneos — data model (SPEC.md §3, translated 1:1)
+// Trainer Arena — data model (SPEC.md §3, translated 1:1)
 // Conventions: autoincrement PK `id`; created_at/updated_at unless noted;
 // FKs cascade on delete unless noted; monetary amounts in cents (Int).
 
@@ -128,6 +128,7 @@ model User {
   judgeCallsCreated    JudgeCall[]               @relation("JudgeCallCreator")
   judgeCallsAssigned   JudgeCall[]               @relation("JudgeCallAssignee")
   judgeMessages        JudgeMessage[]
+  matchMessages        MatchMessage[]
   payments             Payment[]
   auditLogs            AuditLog[]
 
@@ -298,6 +299,7 @@ model Match {
   reports    MatchReport[]
   result     MatchResult?
   judgeCalls JudgeCall[]
+  messages   MatchMessage[]
 
   @@unique([roundId, tableNumber])
   @@index([roundId, status])
@@ -392,6 +394,22 @@ model JudgeMessage {
 
   @@index([judgeCallId])
   @@map("judge_messages")
+}
+
+model MatchMessage {
+  id        Int      @id @default(autoincrement())
+  matchId   Int      @map("match_id")
+  senderId  Int      @map("sender_id")
+  message   String // max 2000, validated server-side
+  sentAt    DateTime @default(now()) @map("sent_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  match  Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  sender User  @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([matchId])
+  @@map("match_messages")
 }
 
 model Payment {

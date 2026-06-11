@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   ForbiddenException,
   Get,
   HttpCode,
@@ -130,5 +131,29 @@ export class TournamentsAdminController {
     this.assertManages(user, tournament);
     const updated = await this.tournaments.closeRegistration(tournament);
     return { tournament: toAdminView(updated) };
+  }
+
+  @Post(':slug/reopen-registration')
+  @HttpCode(200)
+  async reopenRegistration(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('slug') slug: string
+  ): Promise<{ tournament: AdminTournamentView }> {
+    const tournament = await this.tournaments.bySlugOrFail(slug);
+    this.assertManages(user, tournament);
+    const updated = await this.tournaments.reopenRegistration(tournament);
+    return { tournament: toAdminView(updated) };
+  }
+
+  @Delete(':slug')
+  @HttpCode(200)
+  async remove(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('slug') slug: string
+  ): Promise<{ ok: true }> {
+    const tournament = await this.tournaments.bySlugOrFail(slug);
+    this.assertManages(user, tournament);
+    await this.tournaments.softDelete(tournament);
+    return { ok: true };
   }
 }

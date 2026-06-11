@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger, UnprocessableEntityException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { Queue } from 'bullmq';
-import type { Tournament } from '@prisma/client';
+import type { Payment, Tournament, TournamentRegistration } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
 import { channels, events } from '@apptorneos/shared';
 import { AuditService } from '../audit/audit.service';
@@ -15,6 +15,11 @@ import { PaypalClient } from './paypal.client';
 
 export const EXPIRE_PENDING_REGISTRATION = 'expire-pending-registration';
 const EXPIRE_DELAY_MS = 30 * 60 * 1000; // 30 min (SPEC §8.6)
+
+type PaymentWithContext = Payment & {
+  registration: TournamentRegistration | null;
+  tournament: Tournament;
+};
 
 @Injectable()
 export class PaymentsService {
@@ -120,9 +125,77 @@ export class PaymentsService {
     }
   }
 
-  /** Return page handler: capture the approved order; the webhook completes the flow. */
+  /**
+   * Return page handler (SPEC §8.4): capture the approved order. A COMPLETED
+   * capture response is authoritative (it comes straight from PayPal's API),
+   * so the registration is promoted immediately; the signed webhook remains
+   * as reconciliation and covers denied/voided and returns that never arrive.
+   */
   async captureOnReturn(orderId: string): Promise<void> {
-    await this.paypal.captureOrder(orderId);
+    const result = await this.paypal.captureOrder(orderId);
+    if (!result.completed) return;
+    const payment = await this.prisma.payment.findUnique({
+      where: { paypalOrderId: orderId },
+      include: { registration: true, tournament: true },
+    });
+    if (!payment) return;
+    await this.completePayment(payment, result.captureId);
+  }
+
+  /**
+   * Marks a payment as completed and activates its registration (idempotent:
+   * shared by capture-on-return and the PAYMENT.CAPTURE.COMPLETED webhook).
+   */
+  private async completePayment(
+    payment: PaymentWithContext,
+    captureId: string | null
+  ): Promise<void> {
+    if (payment.status === 'completed') return;
+    await this.prisma.$transaction(async (tx) => {
+      await tx.payment.update({
+        where: { id: payment.id },
+        data: {
+          status: 'completed',
+          paypalCaptureId: captureId,
+          completedAt: new Date(),
+        },
+      });
+      if (payment.registration && payment.registration.status === 'pending_payment') {
+        await tx.tournamentRegistration.update({
+          where: { id: payment.registration.id },
+          data: { status: 'active' },
+        });
+      }
+    });
+    await this.audit.log({
+      action: 'payment.completed',
+      targetType: 'payment',
+      targetId: payment.id,
+      payload: { tournament_id: payment.tournamentId, user_id: payment.userId },
+    });
+    if (payment.registration) {
+      const appUrl = this.config.get<string>('APP_URL', 'http://localhost:4200');
+      await this.mail.enqueue(
+        paymentConfirmedEmail(
+          payment.registration.email,
+          payment.registration.fullName,
+          payment.tournament.name,
+          payment.amount,
+          payment.currency,
+          `${appUrl}/torneo/${payment.tournament.slug}`
+        )
+      );
+      await this.realtime.trigger(
+        channels.tournamentAdmin(payment.tournamentId),
+        events.registrationCreated,
+        {
+          registration_id: payment.registration.id,
+          tournament_id: payment.tournamentId,
+          full_name: payment.registration.fullName,
+          status: 'active',
+        }
+      );
+    }
   }
 
   /** Job (30 min): if still pending_payment → cancel locally and free the seat. */
@@ -195,46 +268,7 @@ export class PaymentsService {
 
     switch (event.eventType) {
       case 'PAYMENT.CAPTURE.COMPLETED': {
-        const captureId = payload.resource?.id ?? null;
-        await this.prisma.$transaction(async (tx) => {
-          await tx.payment.update({
-            where: { id: payment.id },
-            data: {
-              status: 'completed',
-              paypalCaptureId: captureId,
-              completedAt: new Date(),
-            },
-          });
-          if (payment.registration && payment.registration.status === 'pending_payment') {
-            await tx.tournamentRegistration.update({
-              where: { id: payment.registration.id },
-              data: { status: 'active' },
-            });
-          }
-        });
-        if (payment.registration) {
-          const appUrl = this.config.get<string>('APP_URL', 'http://localhost:4200');
-          await this.mail.enqueue(
-            paymentConfirmedEmail(
-              payment.registration.email,
-              payment.registration.fullName,
-              payment.tournament.name,
-              payment.amount,
-              payment.currency,
-              `${appUrl}/torneo/${payment.tournament.slug}`
-            )
-          );
-          await this.realtime.trigger(
-            channels.tournamentAdmin(payment.tournamentId),
-            events.registrationCreated,
-            {
-              registration_id: payment.registration.id,
-              tournament_id: payment.tournamentId,
-              full_name: payment.registration.fullName,
-              status: 'active',
-            }
-          );
-        }
+        await this.completePayment(payment, payload.resource?.id ?? null);
         await finish('completed');
         break;
       }

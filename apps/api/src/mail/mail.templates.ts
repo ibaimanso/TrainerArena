@@ -13,8 +13,10 @@ function layout(title: string, body: string): string {
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:24px 0;">
     <tr><td align="center">
       <table role="presentation" width="560" cellpadding="0" cellspacing="0"
-             style="background:#ffffff;border-radius:8px;padding:32px;">
-        <tr><td style="font-size:20px;font-weight:bold;color:#18181b;padding-bottom:16px;">AppTorneos</td></tr>
+             style="background:#ffffff;border-radius:12px;border-top:4px solid #4f46e5;padding:32px;">
+        <tr><td style="font-size:20px;font-weight:bold;color:#18181b;padding-bottom:16px;">
+          Trainer <span style="color:#4f46e5;">Arena</span>
+        </td></tr>
         <tr><td style="font-size:17px;font-weight:bold;color:#18181b;padding-bottom:12px;">${title}</td></tr>
         <tr><td style="font-size:14px;color:#3f3f46;line-height:1.6;">${body}</td></tr>
         <tr><td style="font-size:12px;color:#a1a1aa;padding-top:24px;">
@@ -43,7 +45,7 @@ export function verificationEmail(to: string, name: string, url: string): MailMe
     html: layout(
       'Verifica tu dirección de email',
       `<p>Hola ${name}:</p>
-       <p>Gracias por registrarte en AppTorneos. Pulsa el botón para verificar tu dirección de email.
+       <p>Gracias por registrarte en Trainer Arena. Pulsa el botón para verificar tu dirección de email.
        El enlace caduca en 60 minutos.</p>
        ${button(url, 'Verificar email')}
        <p>Si no creaste esta cuenta, puedes ignorar este mensaje.</p>`

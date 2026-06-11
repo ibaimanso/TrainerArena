@@ -127,6 +127,38 @@ export class TournamentsService {
     });
   }
 
+  /** registration_closed → registration_open (undo an accidental close). */
+  async reopenRegistration(tournament: Tournament): Promise<Tournament> {
+    if (tournament.status !== 'registration_closed') {
+      throw new UnprocessableEntityException(
+        'Solo se pueden reabrir inscripciones de un torneo con inscripciones cerradas.'
+      );
+    }
+    const rounds = await this.prisma.round.count({ where: { tournamentId: tournament.id } });
+    if (rounds > 0) {
+      throw new UnprocessableEntityException(
+        'No se pueden reabrir las inscripciones: ya se han generado rondas.'
+      );
+    }
+    return this.prisma.tournament.update({
+      where: { id: tournament.id },
+      data: { status: 'registration_open' },
+    });
+  }
+
+  /** Soft delete (deletedAt): the tournament disappears from every listing. */
+  async softDelete(tournament: Tournament): Promise<void> {
+    if (tournament.status === 'in_progress') {
+      throw new UnprocessableEntityException(
+        'No se puede eliminar un torneo en curso. Termínalo o cancélalo primero.'
+      );
+    }
+    await this.prisma.tournament.update({
+      where: { id: tournament.id },
+      data: { deletedAt: new Date() },
+    });
+  }
+
   /** Landing data (SPEC §12): open, ongoing, last 10 finished. */
   async landing(): Promise<{
     open: TournamentWithCounts[];

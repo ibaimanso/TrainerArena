@@ -18,10 +18,14 @@ export class MailService {
     private readonly config: ConfigService
   ) {}
 
-  /** Enqueue an email for asynchronous delivery. */
+  /** Enqueue an email for asynchronous delivery (3 attempts, exponential backoff). */
   async enqueue(message: MailMessage): Promise<void> {
     try {
-      await this.queue.add('send', message);
+      await this.queue.add('send', message, {
+        attempts: 3,
+        backoff: { type: 'exponential', delay: 30_000 },
+        removeOnComplete: true,
+      });
     } catch (error) {
       // Mail must never break the main operation; log and continue.
       this.logger.error(`Could not enqueue mail to ${message.to}`, error as Error);
@@ -42,7 +46,7 @@ export class MailService {
       });
     }
     await this.transporter.sendMail({
-      from: `"${this.config.get<string>('MAIL_FROM_NAME', 'AppTorneos')}" <${this.config.get<string>(
+      from: `"${this.config.get<string>('MAIL_FROM_NAME', 'Trainer Arena')}" <${this.config.get<string>(
         'MAIL_FROM_ADDRESS',
         'torneos@apptorneos.local'
       )}>`,

@@ -8,6 +8,7 @@ import type Redis from 'ioredis';
 import { AppModule } from './app/app.module';
 import { csrfMiddleware, serverNowMiddleware } from './common/csrf.middleware';
 import { REDIS } from './redis/redis.module';
+import { createSessionStoreClient } from './redis/session-store.client';
 
 async function bootstrap(): Promise<void> {
   // rawBody is required to verify the PayPal webhook signature (SPEC §8.5).
@@ -21,9 +22,12 @@ async function bootstrap(): Promise<void> {
   app.use(cookieParser());
 
   const redis = app.get<Redis>(REDIS);
+  // The client is lazy (lazyConnect + enableOfflineQueue: false): connect now
+  // so the first session/rate-limit command cannot fail while connecting.
+  if (redis.status === 'wait') await redis.connect();
   app.use(
     session({
-      store: new RedisStore({ client: redis, prefix: 'session:' }),
+      store: new RedisStore({ client: createSessionStoreClient(redis), prefix: 'session:' }),
       name: process.env.SESSION_COOKIE_NAME || 'apptorneos_session',
       secret: process.env.SESSION_SECRET || 'insecure-session-secret',
       resave: false,

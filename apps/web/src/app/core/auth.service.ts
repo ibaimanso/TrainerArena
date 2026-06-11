@@ -59,7 +59,12 @@ export class AuthService {
   }
 
   async logout(): Promise<void> {
-    await firstValueFrom(this.http.post('/api/auth/logout', {}));
+    try {
+      await firstValueFrom(this.http.post('/api/auth/logout', {}));
+    } catch {
+      // Even if the server call fails (e.g. expired session), drop the local
+      // session so the UI never gets stuck logged in.
+    }
     this.user.set(null);
   }
 

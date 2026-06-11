@@ -41,7 +41,9 @@ export interface MyMatch {
   phase: RoundPhase;
   endsAt: string | null;
   roundStatus: RoundStatus;
-  opponent: { id: number; name: string } | null;
+  checkInDeadline: string | null;
+  opponent: { id: number; name: string; tcgLiveUsername: string | null } | null;
+  myTcgLiveUsername: string | null;
   myCheckIn: string | null;
   opponentCheckIn: string | null;
   myReport: { result: ReportResult; score: string | null } | null;
@@ -52,6 +54,20 @@ export interface MyMatch {
     status: string;
     assignedJudge: { id: number; name: string } | null;
   } | null;
+}
+
+/** Registered player, tournament not started yet (no current round). */
+export interface MyMatchNotStarted {
+  name: string;
+  startAt: string;
+  status: TournamentStatus;
+}
+
+export interface MatchMessage {
+  id: number;
+  sender: { id: number; name: string };
+  message: string;
+  sentAt: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -112,9 +128,29 @@ export class RoundsService {
     );
   }
 
-  myMatch(slug: string): Promise<{ match: MyMatch; serverNow: string }> {
+  myMatch(slug: string): Promise<{
+    match: MyMatch | null;
+    notStarted?: MyMatchNotStarted;
+    serverNow: string;
+  }> {
     return firstValueFrom(
-      this.http.get<{ match: MyMatch; serverNow: string }>(`/api/tournaments/${slug}/my-match`)
+      this.http.get<{ match: MyMatch | null; notStarted?: MyMatchNotStarted; serverNow: string }>(
+        `/api/tournaments/${slug}/my-match`
+      )
+    );
+  }
+
+  matchMessages(matchId: number): Promise<{ readOnly: boolean; messages: MatchMessage[] }> {
+    return firstValueFrom(
+      this.http.get<{ readOnly: boolean; messages: MatchMessage[] }>(
+        `/api/matches/${matchId}/messages`
+      )
+    );
+  }
+
+  sendMatchMessage(matchId: number, message: string): Promise<{ message: MatchMessage }> {
+    return firstValueFrom(
+      this.http.post<{ message: MatchMessage }>(`/api/matches/${matchId}/messages`, { message })
     );
   }
 

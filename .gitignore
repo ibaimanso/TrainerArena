@@ -38,3 +38,11 @@ Thumbs.db
 
 # Angular
 .angular
+
+# local portable services (no Docker on this machine)
+.tools/
+pg.log
+
+# agent tooling (Claude Code skills, local agent config)
+.claude/
+.agents/

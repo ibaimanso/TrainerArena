@@ -20,6 +20,7 @@ export const events = {
   matchFinished: 'match.finished',
   matchDisputed: 'match.disputed',
   matchForfeited: 'match.forfeited',
+  matchMessage: 'match.message',
   registrationCreated: 'registration.created',
   judgeCallCreated: 'judge_call.created',
   judgeCallTaken: 'judge_call.taken',

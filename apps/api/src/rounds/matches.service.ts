@@ -4,13 +4,16 @@ import {
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import type { Match, MatchReport, Round, Tournament } from '@prisma/client';
+import type { Match, MatchMessage, MatchReport, Round, Tournament } from '@prisma/client';
 import { channels, events, type MatchOutcome, type ReportResult } from '@apptorneos/shared';
+import type { AuthenticatedUser } from '../auth/current-user';
 import { AuditService } from '../audit/audit.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { RealtimeService } from '../realtime/realtime.service';
 
 export type MatchWithContext = Match & { round: Round & { tournament: Tournament } };
+
+type MessageWithSender = MatchMessage & { sender: { id: number; name: string } };
 
 @Injectable()
 export class MatchesService {
@@ -35,6 +38,70 @@ export class MatchesService {
     if (match.playerAId !== userId && match.playerBId !== userId) {
       throw new ForbiddenException('No eres jugador de esta partida.');
     }
+  }
+
+  /** Player chat stays open until the match reaches a terminal state. */
+  isChatOpen(match: Match): boolean {
+    return (
+      match.status === 'pending' ||
+      match.status === 'active' ||
+      match.status === 'awaiting_confirmation' ||
+      match.status === 'disputed'
+    );
+  }
+
+  private async canViewChat(match: MatchWithContext, user: AuthenticatedUser): Promise<boolean> {
+    if (match.playerAId === user.id || match.playerBId === user.id) return true;
+    if (user.roles.includes('superadmin')) return true;
+    if (match.round.tournament.adminId === user.id) return true;
+    const application = await this.prisma.judgeApplication.findUnique({
+      where: {
+        tournamentId_userId: { tournamentId: match.round.tournament.id, userId: user.id },
+      },
+    });
+    return application?.status === 'approved';
+  }
+
+  /** Match chat history: the two players, plus tournament judges/admin (read). */
+  async listMessages(
+    match: MatchWithContext,
+    user: AuthenticatedUser
+  ): Promise<MessageWithSender[]> {
+    if (!(await this.canViewChat(match, user))) {
+      throw new ForbiddenException('No puedes ver el chat de esta partida.');
+    }
+    return this.prisma.matchMessage.findMany({
+      where: { matchId: match.id },
+      orderBy: { id: 'asc' },
+      include: { sender: { select: { id: true, name: true } } },
+    });
+  }
+
+  /** Player-to-player message; broadcast on the private match channel. */
+  async sendMessage(
+    match: MatchWithContext,
+    userId: number,
+    message: string
+  ): Promise<MessageWithSender> {
+    this.assertPlayer(match, userId);
+    if (match.isBye) {
+      throw new UnprocessableEntityException('Esta partida no tiene rival.');
+    }
+    if (!this.isChatOpen(match)) {
+      throw new UnprocessableEntityException('La partida ha terminado: el chat es de solo lectura.');
+    }
+    const created = await this.prisma.matchMessage.create({
+      data: { matchId: match.id, senderId: userId, message },
+      include: { sender: { select: { id: true, name: true } } },
+    });
+    await this.realtime.trigger(channels.match(match.id), events.matchMessage, {
+      message_id: created.id,
+      match_id: match.id,
+      sender: created.sender,
+      message: created.message,
+      sent_at: created.sentAt.toISOString(),
+    });
+    return created;
   }
 
   /** Check-in (SPEC §6.4): idempotent stamp of the player's slot. */

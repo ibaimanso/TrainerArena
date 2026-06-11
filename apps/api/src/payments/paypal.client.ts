@@ -7,6 +7,12 @@ interface PayPalOrder {
   links?: Array<{ rel: string; href: string }>;
 }
 
+/** Outcome of a capture call, straight from PayPal's API response. */
+export interface CaptureResult {
+  completed: boolean;
+  captureId: string | null;
+}
+
 export interface WebhookVerificationInput {
   transmissionId: string;
   transmissionTime: string;
@@ -101,8 +107,12 @@ export class PaypalClient {
     return { orderId: order.id, approvalUrl };
   }
 
-  /** Captures an approved order (idempotent on PayPal's side). */
-  async captureOrder(orderId: string): Promise<void> {
+  /**
+   * Captures an approved order (idempotent on PayPal's side) and reports the
+   * outcome. A COMPLETED capture in this response is as authoritative as the
+   * webhook: it comes straight from PayPal's API over TLS.
+   */
+  async captureOrder(orderId: string): Promise<CaptureResult> {
     const token = await this.token();
     const res = await fetch(`${this.baseUrl()}/v2/checkout/orders/${orderId}/capture`, {
       method: 'POST',
@@ -112,10 +122,24 @@ export class PaypalClient {
         'PayPal-Request-Id': `capture-${orderId}`,
       },
     });
-    if (!res.ok && res.status !== 422) {
-      // 422 = already captured / not approved; tolerated (webhook decides).
-      this.logger.warn(`PayPal capture for ${orderId} returned ${res.status}`);
+    if (!res.ok) {
+      if (res.status !== 422) {
+        // 422 = already captured / not approved; tolerated (webhook reconciles).
+        this.logger.warn(`PayPal capture for ${orderId} returned ${res.status}`);
+      }
+      return { completed: false, captureId: null };
     }
+    const order = (await res.json()) as {
+      status?: string;
+      purchase_units?: Array<{
+        payments?: { captures?: Array<{ id: string; status: string }> };
+      }>;
+    };
+    const capture = order.purchase_units?.[0]?.payments?.captures?.[0];
+    return {
+      completed: order.status === 'COMPLETED' && capture?.status === 'COMPLETED',
+      captureId: capture?.id ?? null,
+    };
   }
 
   /** Verifies a webhook signature against the configured webhook id (SPEC §8.5). */

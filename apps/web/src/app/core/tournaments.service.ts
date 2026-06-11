@@ -115,6 +115,19 @@ export class TournamentsService {
       )
     );
   }
+
+  reopenRegistration(slug: string): Promise<{ tournament: AdminTournament }> {
+    return firstValueFrom(
+      this.http.post<{ tournament: AdminTournament }>(
+        `/api/admin/tournaments/${slug}/reopen-registration`,
+        {}
+      )
+    );
+  }
+
+  delete(slug: string): Promise<{ ok: true }> {
+    return firstValueFrom(this.http.delete<{ ok: true }>(`/api/admin/tournaments/${slug}`));
+  }
 }
 
 export const STATUS_LABELS: Record<TournamentStatus, string> = {
