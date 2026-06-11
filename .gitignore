@@ -46,3 +46,4 @@ pg.log
 # agent tooling (Claude Code skills, local agent config)
 .claude/
 .agents/
+skills-lock.json
