@@ -106,6 +106,12 @@ export const appRoutes: Route[] = [
     title: 'Resolver disputa — Trainer Arena',
   },
   {
+    path: 'juez/torneo/:slug/mesas',
+    canActivate: [verifiedGuard],
+    loadComponent: () => import('./features/judge/judge-tables.page'),
+    title: 'Mesas de la ronda — Trainer Arena',
+  },
+  {
     path: 'juez/torneo/:slug/decklists',
     canActivate: [verifiedGuard],
     loadComponent: () => import('./features/judge/judge-decklists.page'),

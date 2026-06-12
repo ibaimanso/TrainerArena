@@ -159,6 +159,12 @@ import { TournamentHeaderComponent } from './tournament-header.component';
                     <p class="flex items-center gap-2 text-stone-600 dark:text-stone-400">
                       <span class="badge-success">Aprobada</span> Eres juez aprobado de este torneo.
                     </p>
+                    @if (t.status === 'in_progress') {
+                      <div class="mt-2 flex flex-wrap gap-2">
+                        <a [routerLink]="['/juez/torneo', t.slug, 'mesas']" class="btn-secondary btn-sm">Mesas de la ronda</a>
+                        <a [routerLink]="['/juez/torneo', t.slug, 'decklists']" class="btn-secondary btn-sm">Decklists</a>
+                      </div>
+                    }
                   } @else if (v.judgeApplicationStatus === 'rejected') {
                     <p class="flex items-center gap-2 text-stone-600 dark:text-stone-400">
                       <span class="badge-neutral">Rechazada</span> Tu solicitud de juez fue rechazada.

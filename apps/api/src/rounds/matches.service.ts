@@ -243,8 +243,42 @@ export class MatchesService {
     if (match.status !== 'disputed') {
       throw new UnprocessableEntityException('La partida no está en disputa.');
     }
+    await this.applyOutcome(match, resolverId, outcome, score, 'dispute.resolved');
+  }
+
+  /**
+   * Judge/organizer override: force the result of any non-terminal match
+   * (players never reported, table stalled, penalties…). Same outcomes as a
+   * dispute, including forfeit_both as a double game loss.
+   */
+  async forceResult(
+    match: MatchWithContext,
+    resolverId: number,
+    outcome: MatchOutcome,
+    score: string | null
+  ): Promise<void> {
+    const overridable = ['pending', 'active', 'awaiting_confirmation', 'disputed'];
+    if (!overridable.includes(match.status)) {
+      throw new UnprocessableEntityException('La partida ya tiene un resultado definitivo.');
+    }
+    await this.applyOutcome(match, resolverId, outcome, score, 'result.forced');
+  }
+
+  private async applyOutcome(
+    match: MatchWithContext,
+    resolverId: number,
+    outcome: MatchOutcome,
+    score: string | null,
+    auditAction: string
+  ): Promise<void> {
     if (outcome === 'bye') {
-      throw new UnprocessableEntityException('Resultado no válido para una disputa.');
+      throw new UnprocessableEntityException('Resultado no válido.');
+    }
+    const bo = match.round.phase === 'swiss'
+      ? match.round.tournament.swissBo
+      : match.round.tournament.topCutBo;
+    if (outcome === 'draw' && bo === 1) {
+      throw new UnprocessableEntityException('Las partidas al mejor de 1 no admiten empate.');
     }
     const winnerId =
       outcome === 'a_wins' || outcome === 'forfeit_b'
@@ -273,7 +307,7 @@ export class MatchesService {
     await this.broadcastFinished(match);
     await this.audit.log({
       actorId: resolverId,
-      action: 'dispute.resolved',
+      action: auditAction,
       targetType: 'match',
       targetId: match.id,
       payload: { result: outcome, score },

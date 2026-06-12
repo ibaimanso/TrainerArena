@@ -63,9 +63,62 @@ export interface DisputeDetail {
   }>;
 }
 
+export interface TablePlayer {
+  id: number;
+  name: string;
+  tcgLiveUsername: string | null;
+}
+
+export interface RoundTable {
+  id: number;
+  tableNumber: number;
+  status: string;
+  isBye: boolean;
+  playerA: TablePlayer | null;
+  playerB: TablePlayer | null;
+  checkInA: string | null;
+  checkInB: string | null;
+  reports: Array<{
+    reporter: { id: number; name: string };
+    result: string;
+    score: string | null;
+    reportedAt: string;
+  }>;
+  result: { result: string; winnerId: number | null; score: string | null } | null;
+}
+
+export interface RoundTables {
+  tournament: { slug: string; name: string };
+  round: {
+    id: number;
+    roundNumber: number;
+    phase: string;
+    status: string;
+    endsAt: string | null;
+    bestOf: number;
+  };
+  matches: RoundTable[];
+  serverNow: string;
+}
+
+export type ForceOutcome = 'a_wins' | 'b_wins' | 'draw' | 'forfeit_a' | 'forfeit_b' | 'forfeit_both';
+
 @Injectable({ providedIn: 'root' })
 export class JudgeService {
   private readonly http = inject(HttpClient);
+
+  tables(slug: string): Promise<RoundTables> {
+    return firstValueFrom(this.http.get<RoundTables>(`/api/judge/tournaments/${slug}/tables`));
+  }
+
+  forceResult(matchId: number, result: ForceOutcome, score?: string): Promise<{ ok: true }> {
+    return firstValueFrom(
+      this.http.post<{ ok: true }>(`/api/judge/matches/${matchId}/force-result`, {
+        result,
+        score: score || undefined,
+      })
+    );
+  }
 
   createCall(matchId: number): Promise<{ call: { id: number; status: JudgeCallStatus } }> {
     return firstValueFrom(

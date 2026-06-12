@@ -70,6 +70,9 @@ import { RoundsService, type AdminRound } from '../../core/rounds.service';
                   </a>
                 }
                 @if (r.status === 'active') {
+                  <a [routerLink]="['/juez/torneo', slug(), 'mesas']" class="btn-primary btn-sm">
+                    Mesas
+                  </a>
                   <button type="button" (click)="close(r)" [disabled]="busy()" class="btn-warning btn-sm">
                     Cerrar ronda
                   </button>
