@@ -115,13 +115,22 @@ export interface DecklistEditContext {
 export function canEditDecklist(user: PolicyUser, ctx: DecklistEditContext): boolean {
   if (ctx.decklist && ctx.decklist.userId !== user.id) return false;
   if (ctx.decklist && ctx.decklist.lockedAt !== null) return false;
-  return (
-    ctx.registration !== null &&
-    ctx.registration.userId === user.id &&
-    ctx.registration.status === 'active' &&
-    (ctx.tournament.status === 'registration_open' ||
-      ctx.tournament.status === 'registration_closed')
-  );
+  if (
+    ctx.registration === null ||
+    ctx.registration.userId !== user.id ||
+    ctx.registration.status !== 'active'
+  ) {
+    return false;
+  }
+  if (
+    ctx.tournament.status === 'registration_open' ||
+    ctx.tournament.status === 'registration_closed'
+  ) {
+    return true;
+  }
+  // Late FIRST submission while in progress: allowed (the player keeps taking
+  // round game losses until it lands, and it locks immediately on save).
+  return ctx.tournament.status === 'in_progress' && ctx.decklist === null;
 }
 
 export interface DecklistViewContext {

@@ -135,6 +135,8 @@ export class DecklistsController {
       throw new UnprocessableEntityException({ statusCode: 422, message: errors });
     }
 
+    // A late submission (tournament already running) locks immediately.
+    const lateLock = tournament.status === 'in_progress' ? new Date() : null;
     const decklist = await this.prisma.decklist.upsert({
       where: { tournamentId_userId: { tournamentId: tournament.id, userId: user.id } },
       create: {
@@ -142,6 +144,7 @@ export class DecklistsController {
         userId: user.id,
         rawText: dto.rawText,
         parsedCards: parsed as never,
+        lockedAt: lateLock,
       },
       update: {
         rawText: dto.rawText,
@@ -170,11 +173,18 @@ export class DecklistsController {
     if (!isAdmin && !approvedJudge) {
       throw new ForbiddenException('No tienes acceso a las decklists de este torneo.');
     }
-    const decklists = await this.prisma.decklist.findMany({
-      where: { tournamentId: tournament.id },
-      orderBy: { submittedAt: 'asc' },
-      include: { user: { select: { id: true, name: true } } },
-    });
+    const [decklists, activeRegistrations] = await Promise.all([
+      this.prisma.decklist.findMany({
+        where: { tournamentId: tournament.id },
+        orderBy: { submittedAt: 'asc' },
+        include: { user: { select: { id: true, name: true } } },
+      }),
+      this.prisma.tournamentRegistration.findMany({
+        where: { tournamentId: tournament.id, status: 'active' },
+        select: { userId: true, fullName: true },
+      }),
+    ]);
+    const submitted = new Set(decklists.map((d) => d.userId));
     return {
       decklists: decklists.map((d) => ({
         userId: d.userId,
@@ -183,6 +193,11 @@ export class DecklistsController {
         submittedAt: d.submittedAt.toISOString(),
         lockedAt: d.lockedAt?.toISOString() ?? null,
       })),
+      // Registered players without a decklist: they take a game loss every
+      // round that starts until they submit it.
+      missing: activeRegistrations
+        .filter((r) => !submitted.has(r.userId))
+        .map((r) => ({ userId: r.userId, playerName: r.fullName })),
     };
   }
 

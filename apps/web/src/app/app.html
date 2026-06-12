@@ -6,8 +6,9 @@
 
   <header class="sticky top-0 z-40 border-b border-stone-200/80 bg-white/85 backdrop-blur-md dark:border-stone-800 dark:bg-stone-950/80">
     <div class="mx-auto max-w-5xl px-4">
-      <div class="flex h-16 items-center justify-between gap-3">
-        <a routerLink="/" class="flex items-center gap-2.5 rounded-md text-[17px] font-semibold tracking-tight text-stone-900 dark:text-stone-100"
+      <div class="flex h-16 items-center gap-3">
+        <a routerLink="/"
+           class="flex h-9 shrink-0 items-center gap-2.5 rounded-md text-[17px] font-semibold tracking-tight text-stone-900 dark:text-stone-100"
            aria-label="Trainer Arena — inicio">
           <svg class="h-7 w-7" viewBox="0 0 64 64" aria-hidden="true">
             <rect x="16" y="19" width="20" height="28" rx="3" fill="currentColor" opacity="0.35"
@@ -19,49 +20,31 @@
           <span>Trainer Arena</span>
         </a>
 
-        <nav class="hidden items-center gap-0.5 text-sm sm:flex" aria-label="Navegación principal">
+        <nav class="hidden min-w-0 flex-1 items-center gap-0.5 text-sm lg:flex" aria-label="Navegación principal">
           <a routerLink="/" routerLinkActive="bg-stone-100 text-stone-900 font-medium dark:bg-stone-800 dark:text-stone-100"
              [routerLinkActiveOptions]="{ exact: true }"
-             class="rounded-md px-3 py-2 text-stone-600 transition-colors hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100">Torneos</a>
+             class="inline-flex h-9 items-center rounded-md px-3 text-stone-600 transition-colors hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100">Torneos</a>
           @if (auth.isLoggedIn()) {
             <a routerLink="/mi/torneos" routerLinkActive="bg-stone-100 text-stone-900 font-medium dark:bg-stone-800 dark:text-stone-100"
-               class="rounded-md px-3 py-2 text-stone-600 transition-colors hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100">Mis torneos</a>
+               class="inline-flex h-9 items-center rounded-md px-3 text-stone-600 transition-colors hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100">Mis torneos</a>
             @if (auth.isJudge()) {
               <a routerLink="/juez/cola" routerLinkActive="bg-stone-100 text-stone-900 font-medium dark:bg-stone-800 dark:text-stone-100"
-                 class="rounded-md px-3 py-2 text-stone-600 transition-colors hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100">Cola de juez</a>
+                 class="inline-flex h-9 items-center rounded-md px-3 text-stone-600 transition-colors hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100">Cola de juez</a>
             }
             @if (auth.isAdmin()) {
               <a routerLink="/admin/torneos" routerLinkActive="bg-stone-100 text-stone-900 font-medium dark:bg-stone-800 dark:text-stone-100"
-                 class="rounded-md px-3 py-2 text-stone-600 transition-colors hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100">Administración</a>
+                 class="inline-flex h-9 items-center rounded-md px-3 text-stone-600 transition-colors hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100">Administración</a>
             }
             @if (auth.isSuperadmin()) {
               <a routerLink="/superadmin/usuarios" routerLinkActive="bg-stone-100 text-stone-900 font-medium dark:bg-stone-800 dark:text-stone-100"
-                 class="rounded-md px-3 py-2 text-stone-600 transition-colors hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100">Usuarios</a>
+                 class="inline-flex h-9 items-center rounded-md px-3 text-stone-600 transition-colors hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100">Usuarios</a>
             }
-            <span class="mx-2 h-5 w-px bg-stone-200 dark:bg-stone-700" aria-hidden="true"></span>
-            <a routerLink="/perfil" routerLinkActive="bg-stone-100 text-stone-900 font-medium dark:bg-stone-800 dark:text-stone-100"
-               class="flex items-center gap-1.5 rounded-md px-3 py-2 text-stone-600 transition-colors hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100"
-               aria-label="Mi perfil">
-              <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-                <circle cx="12" cy="7" r="4" />
-              </svg>
-              {{ auth.user()?.name }}
-            </a>
-            <button type="button" (click)="logout()" class="btn-secondary btn-sm ml-1">
-              Salir
-            </button>
-          } @else {
-            <a routerLink="/login"
-               class="rounded-md px-3 py-2 text-stone-600 transition-colors hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100">Entrar</a>
-            <a routerLink="/registro" class="btn-primary btn-sm ml-1">Crear cuenta</a>
           }
         </nav>
 
-        <div class="flex items-center gap-1">
+        <div class="ml-auto flex shrink-0 items-center gap-1.5 lg:ml-0">
           <button type="button" (click)="theme.toggle()"
-                  class="rounded-md p-2 text-stone-600 transition-colors hover:bg-stone-100 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-100"
+                  class="inline-flex h-9 w-9 items-center justify-center rounded-md text-stone-600 transition-colors hover:bg-stone-100 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-100"
                   [attr.aria-label]="theme.dark() ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'">
             @if (theme.dark()) {
               <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
@@ -77,8 +60,29 @@
             }
           </button>
 
+          @if (auth.isLoggedIn()) {
+            <span class="hidden h-5 w-px bg-stone-200 dark:bg-stone-700 lg:block" aria-hidden="true"></span>
+            <a routerLink="/perfil" routerLinkActive="bg-stone-100 text-stone-900 font-medium dark:bg-stone-800 dark:text-stone-100"
+               class="hidden h-9 items-center gap-1.5 rounded-md px-3 text-stone-600 transition-colors hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100 lg:inline-flex"
+               aria-label="Mi perfil">
+              <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+              <span class="max-w-[10rem] truncate">{{ auth.user()?.name }}</span>
+            </a>
+            <button type="button" (click)="logout()" class="btn-secondary btn-sm hidden h-9 lg:inline-flex">
+              Salir
+            </button>
+          } @else {
+            <a routerLink="/login"
+               class="hidden h-9 items-center rounded-md px-3 text-stone-600 transition-colors hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100 lg:inline-flex">Entrar</a>
+            <a routerLink="/registro" class="btn-primary btn-sm hidden h-9 lg:inline-flex">Crear cuenta</a>
+          }
+
           <button type="button"
-                  class="rounded-md p-2 text-stone-700 transition-colors hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800 sm:hidden"
+                  class="inline-flex h-9 w-9 items-center justify-center rounded-md text-stone-700 transition-colors hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800 lg:hidden"
                   (click)="menuOpen.set(!menuOpen())"
                   [attr.aria-expanded]="menuOpen()"
                   aria-controls="menu-movil"
@@ -99,7 +103,7 @@
       </div>
 
       @if (menuOpen()) {
-        <nav id="menu-movil" class="menu-enter flex flex-col gap-0.5 pb-4 text-sm sm:hidden" aria-label="Navegación principal">
+        <nav id="menu-movil" class="menu-enter flex flex-col gap-0.5 pb-4 text-sm lg:hidden" aria-label="Navegación principal">
           <a routerLink="/" (click)="menuOpen.set(false)" routerLinkActive="bg-stone-100 text-stone-900 font-medium dark:bg-stone-800 dark:text-stone-100"
              [routerLinkActiveOptions]="{ exact: true }"
              class="rounded-md px-3 py-2.5 text-stone-600 transition-colors hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100">Torneos</a>

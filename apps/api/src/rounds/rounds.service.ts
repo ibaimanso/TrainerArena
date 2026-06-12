@@ -396,7 +396,47 @@ export class RoundsService {
         { jobId: `time-${round.id}`, delay: Math.max(0, endsAt.getTime() - Date.now()) }
       );
     }
+    await this.forfeitMissingDecklists(tournament, updated);
     return updated;
+  }
+
+  /**
+   * Players who still have not submitted their decklist lose the round
+   * automatically the moment it starts (game loss), round after round, until
+   * they finally submit it (late first submission stays allowed).
+   */
+  private async forfeitMissingDecklists(tournament: Tournament, round: Round): Promise<void> {
+    const matches = await this.prisma.match.findMany({
+      where: { roundId: round.id, status: 'active', isBye: false },
+    });
+    if (matches.length === 0) return;
+    const playerIds = matches.flatMap((m) =>
+      [m.playerAId, m.playerBId].filter((id): id is number => id !== null)
+    );
+    const submitted = await this.prisma.decklist.findMany({
+      where: { tournamentId: tournament.id, userId: { in: playerIds } },
+      select: { userId: true },
+    });
+    const hasDecklist = new Set(submitted.map((d) => d.userId));
+    for (const match of matches) {
+      if (match.playerBId === null) continue;
+      const aMissing = !hasDecklist.has(match.playerAId);
+      const bMissing = !hasDecklist.has(match.playerBId);
+      if (!aMissing && !bMissing) continue;
+
+      const status = aMissing && bMissing ? 'forfeit_both' : aMissing ? 'forfeit_a' : 'forfeit_b';
+      const winnerId =
+        status === 'forfeit_a' ? match.playerBId : status === 'forfeit_b' ? match.playerAId : null;
+      await this.prisma.match.update({
+        where: { id: match.id },
+        data: {
+          status,
+          finishedAt: new Date(),
+          result: { create: { result: status, winnerId } },
+        },
+      });
+      await this.broadcastForfeit(tournament, round, match.id, match.tableNumber, status, 'decklist');
+    }
   }
 
   /** Job (SPEC §6.4): forfeit matches missing check-ins when the window expires. */
@@ -469,7 +509,7 @@ export class RoundsService {
     matchId: number,
     tableNumber: number,
     status: string,
-    reason: 'check_in' | 'round_time'
+    reason: 'check_in' | 'round_time' | 'decklist'
   ): Promise<void> {
     const payload = {
       match_id: matchId,

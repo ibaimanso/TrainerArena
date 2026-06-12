@@ -131,12 +131,28 @@ describe('canEditDecklist', () => {
       })
     ).toBe(false);
   });
-  it('denies in in_progress / finished', () => {
-    for (const status of ['draft', 'in_progress', 'finished', 'cancelled'] as const) {
+  it('denies in draft / finished / cancelled', () => {
+    for (const status of ['draft', 'finished', 'cancelled'] as const) {
       expect(
         canEditDecklist(player, { tournament: tournament({ status }), registration: reg, decklist: null })
       ).toBe(false);
     }
+  });
+  it('in_progress: allows only a late FIRST submission (decklist game-loss rule)', () => {
+    expect(
+      canEditDecklist(player, {
+        tournament: tournament({ status: 'in_progress' }),
+        registration: reg,
+        decklist: null,
+      })
+    ).toBe(true);
+    expect(
+      canEditDecklist(player, {
+        tournament: tournament({ status: 'in_progress' }),
+        registration: reg,
+        decklist: { userId: 1, lockedAt: null },
+      })
+    ).toBe(false);
   });
   it('denies without active registration', () => {
     expect(canEditDecklist(player, { tournament: tournament(), registration: null, decklist: null })).toBe(false);

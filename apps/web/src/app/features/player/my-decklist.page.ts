@@ -38,6 +38,11 @@ import { PlayerService, type DecklistView } from '../../core/player.service';
             No puedes editar la decklist en este momento (necesitas una inscripción activa y que
             el torneo no haya empezado).
           </p>
+        } @else {
+          <p class="alert-warning" role="status">
+            <strong>Recuerda:</strong> si no envías tu decklist antes de que empiece una ronda,
+            recibirás un game loss automático en esa ronda (y en las siguientes, hasta enviarla).
+          </p>
         }
 
         <div class="grid gap-4 lg:grid-cols-2">

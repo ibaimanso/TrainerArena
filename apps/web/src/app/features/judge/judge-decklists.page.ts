@@ -13,6 +13,11 @@ interface DecklistRow {
   lockedAt: string | null;
 }
 
+interface MissingRow {
+  userId: number;
+  playerName: string;
+}
+
 /** Judge decklist listing (SPEC §12 /juez/torneo/{slug}/decklists). */
 @Component({
   imports: [RouterLink, DatePipe],
@@ -27,6 +32,23 @@ interface DecklistRow {
 
       @if (error()) {
         <p class="alert-error" role="alert">{{ error() }}</p>
+      }
+
+      @if (missing().length > 0) {
+        <section class="alert-warning" aria-labelledby="titulo-sin-decklist" role="status">
+          <h2 id="titulo-sin-decklist" class="font-semibold">
+            Sin decklist ({{ missing().length }})
+          </h2>
+          <p class="mt-1 text-xs">
+            Estos jugadores inscritos aún no han enviado su lista: recibirán un
+            <strong>game loss automático en cada ronda que empiece</strong> hasta que la envíen.
+          </p>
+          <ul class="mt-2 flex flex-wrap gap-1.5">
+            @for (m of missing(); track m.userId) {
+              <li class="badge-warning">{{ m.playerName }}</li>
+            }
+          </ul>
+        </section>
       }
 
       @if (decklists().length === 0) {
@@ -82,14 +104,18 @@ export default class JudgeDecklistsPage implements OnInit {
   readonly slug = input.required<string>();
   private readonly http = inject(HttpClient);
   protected readonly decklists = signal<DecklistRow[]>([]);
+  protected readonly missing = signal<MissingRow[]>([]);
   protected readonly error = signal<string | null>(null);
 
   async ngOnInit(): Promise<void> {
     try {
       const res = await firstValueFrom(
-        this.http.get<{ decklists: DecklistRow[] }>(`/api/judge/tournaments/${this.slug()}/decklists`)
+        this.http.get<{ decklists: DecklistRow[]; missing: MissingRow[] }>(
+          `/api/judge/tournaments/${this.slug()}/decklists`
+        )
       );
       this.decklists.set(res.decklists);
+      this.missing.set(res.missing);
     } catch (e) {
       this.error.set(apiErrorMessage(e));
     }

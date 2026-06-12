@@ -14,7 +14,10 @@ import { RoundsService, type AdminRound } from '../../core/rounds.service';
           <h1 class="page-title">Rondas</h1>
           <p class="mt-1 text-sm text-stone-500 dark:text-stone-400">Genera pareos, inicia y cierra las rondas del torneo.</p>
         </div>
-        <a routerLink="/admin/torneos" class="link text-sm">Volver a mis torneos</a>
+        <div class="flex flex-wrap items-center gap-3">
+          <a [routerLink]="['/juez/torneo', slug(), 'decklists']" class="btn-secondary btn-sm">Decklists</a>
+          <a routerLink="/admin/torneos" class="link text-sm">Volver a mis torneos</a>
+        </div>
       </div>
 
       @if (error()) {

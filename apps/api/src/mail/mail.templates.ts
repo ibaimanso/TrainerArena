@@ -90,7 +90,8 @@ export function registrationConfirmedEmail(
       `<p>Hola ${fullName}:</p>
        <p>Tu inscripción en <strong>${tournamentName}</strong> está confirmada.</p>
        <p>Comienzo: <strong>${fecha}</strong>.</p>
-       <p>Recuerda enviar tu decklist antes de que empiece la primera ronda.</p>
+       <p><strong>Importante:</strong> envía tu decklist antes de que empiece la primera ronda.
+       Si no la has enviado, recibirás un game loss automático en cada ronda hasta que la envíes.</p>
        ${button(tournamentUrl, 'Ver torneo')}`
     ),
   };
