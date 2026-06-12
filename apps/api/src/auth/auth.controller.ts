@@ -14,6 +14,7 @@ import {
 import type { Request } from 'express';
 import type { RoleName } from '@apptorneos/shared';
 import { RateLimitService } from '../common/rate-limit.service';
+import { Recaptcha } from '../common/recaptcha.guard';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   ChangePasswordDto,
@@ -60,6 +61,7 @@ export class AuthController {
   ) {}
 
   @Public()
+  @Recaptcha('registro')
   @Post('register')
   async register(@Body() dto: RegisterDto, @Req() req: Request): Promise<MeResponse> {
     const user = await this.auth.register(dto.name, dto.email, dto.password);
@@ -77,6 +79,7 @@ export class AuthController {
   }
 
   @Public()
+  @Recaptcha('login')
   @Post('login')
   @HttpCode(200)
   async login(@Body() dto: LoginDto, @Req() req: Request, @Ip() ip: string): Promise<MeResponse> {
@@ -147,6 +150,7 @@ export class AuthController {
   }
 
   @Public()
+  @Recaptcha('recuperar_contrasena')
   @Post('forgot-password')
   @HttpCode(200)
   async forgotPassword(@Body() dto: ForgotPasswordDto, @Ip() ip: string): Promise<{ ok: true }> {
@@ -157,6 +161,7 @@ export class AuthController {
   }
 
   @Public()
+  @Recaptcha('restablecer_contrasena')
   @Post('reset-password')
   @HttpCode(200)
   async resetPassword(@Body() dto: ResetPasswordDto): Promise<{ ok: true }> {

@@ -20,8 +20,9 @@ import { PlayerService } from '../../core/player.service';
           <p class="alert-error" role="alert">{{ error() }}</p>
         }
         <p class="alert-info" role="status">
-          Si el torneo tiene cuota de inscripción, al confirmar te redirigiremos a PayPal
-          para completar el pago de forma segura.
+          Si el torneo tiene cuota de inscripción, tu plaza quedará reservada y el organizador
+          la confirmará cuando reciba tu pago (verás las instrucciones de pago al enviar la
+          solicitud).
         </p>
         <div>
           <label for="fullName" class="label">Nombre completo</label>
@@ -86,17 +87,12 @@ export default class RegisterTournamentPage implements OnInit {
     this.error.set(null);
     try {
       const v = this.form.getRawValue();
-      const res = await this.player.register(this.slug(), {
+      await this.player.register(this.slug(), {
         fullName: v.fullName,
         tcgLiveUsername: v.tcgLiveUsername,
         email: v.email,
         phone: v.phone || undefined,
       });
-      if (res.approvalUrl) {
-        // Paid tournament: continue in PayPal.
-        window.location.href = res.approvalUrl;
-        return;
-      }
       await this.router.navigate(['/torneo', this.slug()], { queryParams: { inscrito: 1 } });
     } catch (e) {
       this.error.set(apiErrorMessage(e));

@@ -173,7 +173,9 @@ model Tournament {
   topCutSize       Int              @map("top_cut_size") // 0,4,8,16,32,64
   feeAmount        Int              @default(0) @map("fee_amount") // cents; 0 = free
   feeCurrency      String           @default("EUR") @map("fee_currency") @db.Char(3)
-  paypalAccount    String?          @map("paypal_account")
+  paypalAccount    String?          @map("paypal_account") // legacy (online checkout era)
+  /// How to pay the fee personally (Bizum, transfer…); shown to pending registrants.
+  paymentInstructions String?       @map("payment_instructions")
   currentRoundId   Int?             @map("current_round_id")
   pairingSeed      String           @map("pairing_seed") // 32 random chars, fixed at creation
   deletedAt        DateTime?        @map("deleted_at")

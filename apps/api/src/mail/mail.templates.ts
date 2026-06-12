@@ -96,6 +96,56 @@ export function registrationConfirmedEmail(
   };
 }
 
+/** 3b. Paid tournament: request received, seat reserved pending manual confirmation. */
+export function registrationPendingEmail(
+  to: string,
+  fullName: string,
+  tournamentName: string,
+  feeCents: number,
+  currency: string,
+  paymentInstructions: string | null,
+  tournamentUrl: string
+): MailMessage {
+  return {
+    to,
+    subject: `Solicitud recibida — ${tournamentName}`,
+    html: layout(
+      'Solicitud recibida: pendiente de confirmación',
+      `<p>Hola ${fullName}:</p>
+       <p>Tu plaza en <strong>${tournamentName}</strong> está reservada, pendiente de que el
+       organizador confirme tu pago de <strong>${formatAmount(feeCents, currency)}</strong>.</p>
+       ${
+         paymentInstructions
+           ? `<p style="background:#f4f4f5;border-radius:8px;padding:12px 16px;"><strong>Cómo pagar:</strong><br>${paymentInstructions}</p>`
+           : ''
+       }
+       <p>Recibirás otro email cuando el organizador confirme tu inscripción.</p>
+       ${button(tournamentUrl, 'Ver torneo')}`
+    ),
+  };
+}
+
+/** 3c. Paid tournament: request rejected by the organizer (seat freed). */
+export function registrationRejectedEmail(
+  to: string,
+  fullName: string,
+  tournamentName: string,
+  tournamentUrl: string
+): MailMessage {
+  return {
+    to,
+    subject: `Inscripción no confirmada — ${tournamentName}`,
+    html: layout(
+      'Inscripción no confirmada',
+      `<p>Hola ${fullName}:</p>
+       <p>El organizador de <strong>${tournamentName}</strong> no ha confirmado tu inscripción
+       y tu reserva de plaza se ha liberado. Si crees que es un error (por ejemplo, si ya
+       realizaste el pago), responde al organizador o vuelve a inscribirte.</p>
+       ${button(tournamentUrl, 'Ver torneo')}`
+    ),
+  };
+}
+
 /** Cents → "1.234,56 EUR" (es-ES). */
 export function formatAmount(cents: number, currency: string): string {
   const formatted = new Intl.NumberFormat('es-ES', {

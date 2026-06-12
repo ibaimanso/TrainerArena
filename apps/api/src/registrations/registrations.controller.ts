@@ -5,13 +5,15 @@ import {
   Get,
   HttpCode,
   Param,
+  ParseIntPipe,
   Post,
   UseGuards,
 } from '@nestjs/common';
+import type { Tournament } from '@prisma/client';
 import { canManageTournament, type TournamentStatus } from '@apptorneos/shared';
 import { AuthGuard, RequireRoles } from '../auth/auth.guard';
 import { CurrentUser, type AuthenticatedUser } from '../auth/current-user';
-import { PaymentsService } from '../payments/payments.service';
+import { Recaptcha } from '../common/recaptcha.guard';
 import { PrismaService } from '../prisma/prisma.service';
 import { TournamentsService } from '../tournaments/tournaments.service';
 import { RegisterForTournamentDto } from './registrations.dto';
@@ -23,23 +25,22 @@ export class RegistrationsController {
   constructor(
     private readonly registrations: RegistrationsService,
     private readonly tournaments: TournamentsService,
-    private readonly payments: PaymentsService,
     private readonly prisma: PrismaService
   ) {}
 
-  /** Registration: free → active directly; paid → pending_payment + PayPal approval URL. */
+  /**
+   * Registration: free → active directly; paid → seat reserved as
+   * pending_payment until the organizer confirms the personal payment.
+   */
+  @Recaptcha('inscripcion_torneo')
   @Post('tournaments/:slug/register')
   async register(
     @CurrentUser() user: AuthenticatedUser,
     @Param('slug') slug: string,
     @Body() dto: RegisterForTournamentDto
-  ): Promise<{ status: string; approvalUrl?: string }> {
+  ): Promise<{ status: string }> {
     const tournament = await this.tournaments.publicBySlugOrFail(slug);
-    if (tournament.feeAmount > 0) {
-      const { approvalUrl } = await this.payments.registerPaid(tournament, user.id, dto);
-      return { status: 'pending_payment', approvalUrl };
-    }
-    const registration = await this.registrations.registerFree(tournament, user.id, dto);
+    const registration = await this.registrations.register(tournament, user.id, dto);
     return { status: registration.status };
   }
 
@@ -76,11 +77,14 @@ export class RegistrationsController {
 export class RegistrationsAdminController {
   constructor(
     private readonly tournaments: TournamentsService,
+    private readonly registrations: RegistrationsService,
     private readonly prisma: PrismaService
   ) {}
 
-  @Get()
-  async list(@CurrentUser() user: AuthenticatedUser, @Param('slug') slug: string) {
+  private async managedTournamentOrFail(
+    user: AuthenticatedUser,
+    slug: string
+  ): Promise<Tournament> {
     const tournament = await this.tournaments.bySlugOrFail(slug);
     const policyTournament = {
       id: tournament.id,
@@ -90,6 +94,12 @@ export class RegistrationsAdminController {
     if (!canManageTournament({ id: user.id, roles: user.roles, emailVerified: true }, policyTournament)) {
       throw new ForbiddenException('No eres el administrador de este torneo.');
     }
+    return tournament;
+  }
+
+  @Get()
+  async list(@CurrentUser() user: AuthenticatedUser, @Param('slug') slug: string) {
+    const tournament = await this.managedTournamentOrFail(user, slug);
     const registrations = await this.prisma.tournamentRegistration.findMany({
       where: { tournamentId: tournament.id },
       orderBy: { registeredAt: 'asc' },
@@ -108,5 +118,31 @@ export class RegistrationsAdminController {
         droppedAt: r.droppedAt?.toISOString() ?? null,
       })),
     };
+  }
+
+  /** Organizer confirms a personal payment: the pending request becomes active. */
+  @Post(':id/confirm')
+  @HttpCode(200)
+  async confirm(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('slug') slug: string,
+    @Param('id', ParseIntPipe) id: number
+  ): Promise<{ status: string }> {
+    const tournament = await this.managedTournamentOrFail(user, slug);
+    const registration = await this.registrations.confirm(tournament, id);
+    return { status: registration.status };
+  }
+
+  /** Organizer rejects a pending request: the seat is freed. */
+  @Post(':id/reject')
+  @HttpCode(200)
+  async reject(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('slug') slug: string,
+    @Param('id', ParseIntPipe) id: number
+  ): Promise<{ ok: true }> {
+    const tournament = await this.managedTournamentOrFail(user, slug);
+    await this.registrations.reject(tournament, id);
+    return { ok: true };
   }
 }

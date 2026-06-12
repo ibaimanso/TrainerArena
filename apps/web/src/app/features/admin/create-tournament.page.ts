@@ -146,9 +146,15 @@ import { TournamentsService } from '../../core/tournaments.service';
               </div>
               @if (isPaid()) {
                 <div>
-                  <label for="paypalAccount" class="label">Cuenta PayPal (email)</label>
-                  <input id="paypalAccount" type="email" formControlName="paypalAccount" required class="input" />
-                  <p class="hint">Email de la cuenta PayPal que recibirá los pagos. Obligatoria en torneos de pago.</p>
+                  <label for="paymentInstructions" class="label">Instrucciones de pago</label>
+                  <textarea id="paymentInstructions" formControlName="paymentInstructions" rows="3"
+                            maxlength="1000" required class="input"
+                            placeholder="p. ej. Bizum al 6XX XXX XXX indicando tu nombre de TCG Live"></textarea>
+                  <p class="hint">
+                    Los pagos se hacen fuera de la plataforma (Bizum, transferencia…). El jugador
+                    verá estas instrucciones al inscribirse y su plaza quedará reservada hasta que
+                    tú confirmes el pago desde «Registros».
+                  </p>
                 </div>
               }
 
@@ -245,7 +251,7 @@ export default class CreateTournamentPage {
     roundTimeMinutes: [30, [Validators.required, Validators.min(10), Validators.max(240)]],
     checkinMinutes: [5, [Validators.required, Validators.min(1), Validators.max(60)]],
     feeEuros: [0, [Validators.required, Validators.min(0), Validators.max(10000)]],
-    paypalAccount: [''],
+    paymentInstructions: [''],
   });
 
   protected readonly isPaid = computed(() => this.feeEurosValue() > 0);
@@ -303,7 +309,7 @@ export default class CreateTournamentPage {
         topCutBo: Number(v.topCutBo),
         topCutSize: Number(v.topCutSize),
         feeAmount: Math.round(Number(v.feeEuros) * 100),
-        paypalAccount: Number(v.feeEuros) > 0 ? v.paypalAccount : undefined,
+        paymentInstructions: Number(v.feeEuros) > 0 ? v.paymentInstructions : undefined,
       });
       await this.router.navigate(['/admin/torneos'], {
         queryParams: { creado: res.tournament.slug },

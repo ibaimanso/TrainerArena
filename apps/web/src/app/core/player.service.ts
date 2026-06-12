@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
+import { RecaptchaService } from './recaptcha.service';
 import type {
   JudgeApplicationStatus,
   RegistrationStatus,
@@ -40,16 +41,15 @@ export interface DecklistView {
 @Injectable({ providedIn: 'root' })
 export class PlayerService {
   private readonly http = inject(HttpClient);
+  private readonly recaptcha = inject(RecaptchaService);
 
-  register(
+  async register(
     slug: string,
     data: { fullName: string; tcgLiveUsername: string; email: string; phone?: string }
-  ): Promise<{ status: string; approvalUrl?: string }> {
+  ): Promise<{ status: string }> {
+    const headers = await this.recaptcha.headers('inscripcion_torneo');
     return firstValueFrom(
-      this.http.post<{ status: string; approvalUrl?: string }>(
-        `/api/tournaments/${slug}/register`,
-        data
-      )
+      this.http.post<{ status: string }>(`/api/tournaments/${slug}/register`, data, { headers })
     );
   }
 

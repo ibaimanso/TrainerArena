@@ -210,3 +210,9 @@
     transform: translateY(-6px);
   }
 }
+
+/* reCAPTCHA v3: badge hidden (allowed by Google because the footer shows the
+   required attribution text whenever reCAPTCHA is enabled). */
+.grecaptcha-badge {
+  visibility: hidden;
+}

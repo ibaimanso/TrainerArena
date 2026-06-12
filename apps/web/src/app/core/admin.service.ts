@@ -37,6 +37,24 @@ export class AdminService {
     );
   }
 
+  confirmRegistration(slug: string, id: number): Promise<{ status: RegistrationStatus }> {
+    return firstValueFrom(
+      this.http.post<{ status: RegistrationStatus }>(
+        `/api/admin/tournaments/${slug}/registrations/${id}/confirm`,
+        {}
+      )
+    );
+  }
+
+  rejectRegistration(slug: string, id: number): Promise<{ ok: true }> {
+    return firstValueFrom(
+      this.http.post<{ ok: true }>(
+        `/api/admin/tournaments/${slug}/registrations/${id}/reject`,
+        {}
+      )
+    );
+  }
+
   judgeApplications(slug: string): Promise<{ applications: AdminJudgeApplication[] }> {
     return firstValueFrom(
       this.http.get<{ applications: AdminJudgeApplication[] }>(

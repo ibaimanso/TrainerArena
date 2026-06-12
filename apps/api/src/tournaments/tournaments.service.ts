@@ -41,9 +41,9 @@ export class TournamentsService {
     if (Number.isNaN(startAt.getTime()) || startAt <= new Date()) {
       throw new UnprocessableEntityException('La fecha de inicio debe ser futura.');
     }
-    if (dto.feeAmount > 0 && !dto.paypalAccount) {
+    if (dto.feeAmount > 0 && !dto.paymentInstructions?.trim()) {
       throw new UnprocessableEntityException(
-        'La cuenta de PayPal es obligatoria en torneos de pago.'
+        'Indica cómo deben pagarte los jugadores (Bizum, transferencia…) en los torneos de pago.'
       );
     }
     return this.prisma.tournament.create({
@@ -64,7 +64,7 @@ export class TournamentsService {
         topCutSize: dto.topCutSize,
         feeAmount: dto.feeAmount,
         feeCurrency: 'EUR',
-        paypalAccount: dto.feeAmount > 0 ? dto.paypalAccount : null,
+        paymentInstructions: dto.feeAmount > 0 ? (dto.paymentInstructions ?? null) : null,
         pairingSeed: randomBytes(16).toString('hex'), // 32 chars, fixed at creation
       },
     });

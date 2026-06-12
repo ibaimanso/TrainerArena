@@ -82,16 +82,6 @@ export const appRoutes: Route[] = [
     title: 'Mi decklist — Trainer Arena',
   },
   {
-    path: 'torneo/:slug/pago/volver',
-    loadComponent: () => import('./features/payments/payment-return.page'),
-    title: 'Procesando pago — Trainer Arena',
-  },
-  {
-    path: 'pago/cancelar',
-    loadComponent: () => import('./features/payments/payment-cancelled.page'),
-    title: 'Pago cancelado — Trainer Arena',
-  },
-  {
     path: 'mi/torneos',
     canActivate: [verifiedGuard],
     loadComponent: () => import('./features/player/my-tournaments.page'),

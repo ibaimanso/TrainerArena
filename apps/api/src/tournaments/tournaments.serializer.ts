@@ -42,8 +42,13 @@ export function toPublicSummary(t: TournamentWithCounts): PublicTournamentSummar
 
 export interface PublicTournamentDetail extends PublicTournamentSummary {
   description: string | null;
+  paymentInstructions: string | null;
 }
 
 export function toPublicDetail(t: Tournament, activeCount: number): PublicTournamentDetail {
-  return { ...toPublicSummary({ ...t, activeCount }), description: t.description };
+  return {
+    ...toPublicSummary({ ...t, activeCount }),
+    description: t.description,
+    paymentInstructions: t.paymentInstructions,
+  };
 }

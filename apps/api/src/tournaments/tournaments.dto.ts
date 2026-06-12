@@ -1,5 +1,4 @@
 import {
-  IsEmail,
   IsIn,
   IsInt,
   IsISO8601,
@@ -62,6 +61,8 @@ export class CreateTournamentDto {
   feeAmount!: number;
 
   @ValidateIf((o: CreateTournamentDto) => o.feeAmount > 0)
-  @IsEmail({}, { message: 'La cuenta de PayPal debe ser un email válido.' })
-  paypalAccount?: string;
+  @IsString({ message: 'Las instrucciones de pago son obligatorias en torneos de pago.' })
+  @IsNotEmpty({ message: 'Las instrucciones de pago son obligatorias en torneos de pago.' })
+  @MaxLength(1000, { message: 'Las instrucciones de pago no pueden superar los 1000 caracteres.' })
+  paymentInstructions?: string;
 }

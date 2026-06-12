@@ -8,7 +8,11 @@ import { ConfigService } from '@nestjs/config';
 import type { Tournament, TournamentRegistration } from '@prisma/client';
 import { channels, events } from '@apptorneos/shared';
 import { MailService } from '../mail/mail.service';
-import { registrationConfirmedEmail } from '../mail/mail.templates';
+import {
+  registrationConfirmedEmail,
+  registrationPendingEmail,
+  registrationRejectedEmail,
+} from '../mail/mail.templates';
 import { PrismaService } from '../prisma/prisma.service';
 import { RealtimeService } from '../realtime/realtime.service';
 import type { RegisterForTournamentDto } from './registrations.dto';
@@ -23,10 +27,13 @@ export class RegistrationsService {
   ) {}
 
   /**
-   * Free registration (SPEC §8.2). Runs in a transaction holding a row lock on
-   * the tournament so concurrent registrations cannot exceed max_players.
+   * Registration (SPEC §8.2). Free → active right away. Paid → the seat is
+   * reserved as pending_payment until the organizer confirms the personal
+   * payment (Bizum, transfer…) from the admin waiting list. Runs in a
+   * transaction holding a row lock on the tournament so concurrent
+   * registrations cannot exceed max_players.
    */
-  async registerFree(
+  async register(
     tournament: Tournament,
     userId: number,
     dto: RegisterForTournamentDto
@@ -34,6 +41,7 @@ export class RegistrationsService {
     if (tournament.status !== 'registration_open') {
       throw new UnprocessableEntityException('Las inscripciones no están abiertas.');
     }
+    const isPaid = tournament.feeAmount > 0;
 
     const registration = await this.prisma.$transaction(async (tx) => {
       // Row lock (SELECT ... FOR UPDATE) serializes capacity checks (SPEC §8.1).
@@ -60,7 +68,7 @@ export class RegistrationsService {
         data: {
           tournamentId: tournament.id,
           userId,
-          status: 'active',
+          status: isPaid ? 'pending_payment' : 'active',
           fullName: dto.fullName,
           tcgLiveUsername: dto.tcgLiveUsername,
           email: dto.email,
@@ -69,7 +77,7 @@ export class RegistrationsService {
       });
     });
 
-    // After commit: admin broadcast + queued confirmation email.
+    // After commit: admin broadcast + queued email.
     await this.realtime.trigger(
       channels.tournamentAdmin(tournament.id),
       events.registrationCreated,
@@ -81,6 +89,37 @@ export class RegistrationsService {
       }
     );
     const appUrl = this.config.get<string>('APP_URL', 'http://localhost:4200');
+    const tournamentUrl = `${appUrl}/torneo/${tournament.slug}`;
+    await this.mail.enqueue(
+      isPaid
+        ? registrationPendingEmail(
+            registration.email,
+            registration.fullName,
+            tournament.name,
+            tournament.feeAmount,
+            tournament.feeCurrency,
+            tournament.paymentInstructions,
+            tournamentUrl
+          )
+        : registrationConfirmedEmail(
+            registration.email,
+            registration.fullName,
+            tournament.name,
+            tournament.startAt,
+            tournamentUrl
+          )
+    );
+    return registration;
+  }
+
+  /** Organizer confirms a personal payment: pending_payment → active. */
+  async confirm(tournament: Tournament, registrationId: number): Promise<TournamentRegistration> {
+    const registration = await this.pendingByIdOrFail(tournament, registrationId);
+    const updated = await this.prisma.tournamentRegistration.update({
+      where: { id: registration.id },
+      data: { status: 'active' },
+    });
+    const appUrl = this.config.get<string>('APP_URL', 'http://localhost:4200');
     await this.mail.enqueue(
       registrationConfirmedEmail(
         registration.email,
@@ -90,6 +129,47 @@ export class RegistrationsService {
         `${appUrl}/torneo/${tournament.slug}`
       )
     );
+    await this.realtime.trigger(
+      channels.tournamentAdmin(tournament.id),
+      events.registrationCreated,
+      {
+        registration_id: registration.id,
+        tournament_id: tournament.id,
+        full_name: registration.fullName,
+        status: 'active',
+      }
+    );
+    return updated;
+  }
+
+  /** Organizer rejects a pending request: the seat is freed. */
+  async reject(tournament: Tournament, registrationId: number): Promise<void> {
+    const registration = await this.pendingByIdOrFail(tournament, registrationId);
+    await this.prisma.tournamentRegistration.delete({ where: { id: registration.id } });
+    const appUrl = this.config.get<string>('APP_URL', 'http://localhost:4200');
+    await this.mail.enqueue(
+      registrationRejectedEmail(
+        registration.email,
+        registration.fullName,
+        tournament.name,
+        `${appUrl}/torneo/${tournament.slug}`
+      )
+    );
+  }
+
+  private async pendingByIdOrFail(
+    tournament: Tournament,
+    registrationId: number
+  ): Promise<TournamentRegistration> {
+    const registration = await this.prisma.tournamentRegistration.findUnique({
+      where: { id: registrationId },
+    });
+    if (!registration || registration.tournamentId !== tournament.id) {
+      throw new NotFoundException('Inscripción no encontrada.');
+    }
+    if (registration.status !== 'pending_payment') {
+      throw new UnprocessableEntityException('La inscripción no está pendiente de confirmación.');
+    }
     return registration;
   }
 
@@ -103,6 +183,11 @@ export class RegistrationsService {
     }
     if (registration.userId !== userId) {
       throw new ForbiddenException('Solo puedes darte de baja a ti mismo.');
+    }
+    // A pending (unconfirmed) request is simply withdrawn: the seat is freed.
+    if (registration.status === 'pending_payment') {
+      await this.prisma.tournamentRegistration.delete({ where: { id: registration.id } });
+      return { ...registration, status: 'dropped' };
     }
     if (registration.status !== 'active') {
       throw new UnprocessableEntityException('Tu inscripción no está activa.');

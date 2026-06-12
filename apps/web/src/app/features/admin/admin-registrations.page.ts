@@ -49,6 +49,7 @@ import {
                 <th scope="col">Email</th>
                 <th scope="col">Estado</th>
                 <th scope="col">Inscrito</th>
+                <th scope="col">Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -63,9 +64,23 @@ import {
                     </span>
                   </td>
                   <td class="whitespace-nowrap text-stone-500 dark:text-stone-400">{{ r.registeredAt | date: 'd MMM, HH:mm' }}</td>
+                  <td>
+                    @if (r.status === 'pending_payment') {
+                      <div class="flex flex-wrap gap-2">
+                        <button type="button" (click)="confirmRegistration(r)" class="btn-success btn-sm"
+                                [attr.aria-label]="'Confirmar el pago de ' + r.fullName">
+                          Confirmar pago
+                        </button>
+                        <button type="button" (click)="rejectRegistration(r)" class="btn-danger-outline btn-sm"
+                                [attr.aria-label]="'Rechazar la solicitud de ' + r.fullName">
+                          Rechazar
+                        </button>
+                      </div>
+                    }
+                  </td>
                 </tr>
               } @empty {
-                <tr><td colspan="5" class="py-6 text-center text-stone-500 dark:text-stone-400">Sin inscripciones todavía.</td></tr>
+                <tr><td colspan="6" class="py-6 text-center text-stone-500 dark:text-stone-400">Sin inscripciones todavía.</td></tr>
               }
             </tbody>
           </table>
@@ -145,7 +160,7 @@ export default class AdminRegistrationsPage implements OnInit {
   protected statusLabel(status: string): string {
     const labels: Record<string, string> = {
       active: 'Activa',
-      pending_payment: 'Pendiente de pago',
+      pending_payment: 'Pendiente de confirmación',
       dropped: 'Retirado',
     };
     return labels[status] ?? status;
@@ -158,6 +173,34 @@ export default class AdminRegistrationsPage implements OnInit {
       rejected: 'Rechazada',
     };
     return labels[status] ?? status;
+  }
+
+  protected async confirmRegistration(r: AdminRegistration): Promise<void> {
+    const confirmed = window.confirm(
+      `¿Confirmar la inscripción de «${r.fullName}»?\n\nHazlo solo cuando hayas recibido su pago.`
+    );
+    if (!confirmed) return;
+    this.error.set(null);
+    try {
+      await this.admin.confirmRegistration(this.slug(), r.id);
+      await this.reload();
+    } catch (e) {
+      this.error.set(apiErrorMessage(e));
+    }
+  }
+
+  protected async rejectRegistration(r: AdminRegistration): Promise<void> {
+    const confirmed = window.confirm(
+      `¿Rechazar la solicitud de «${r.fullName}»?\n\nSu reserva de plaza se liberará y recibirá un email.`
+    );
+    if (!confirmed) return;
+    this.error.set(null);
+    try {
+      await this.admin.rejectRegistration(this.slug(), r.id);
+      await this.reload();
+    } catch (e) {
+      this.error.set(apiErrorMessage(e));
+    }
   }
 
   protected async decide(a: AdminJudgeApplication, decision: 'approved' | 'rejected'): Promise<void> {

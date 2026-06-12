@@ -11,7 +11,6 @@ import { RedisModule } from '../redis/redis.module';
 import { RolesModule } from '../roles/roles.module';
 import { JudgesModule } from '../judges/judges.module';
 import { RoundsModule } from '../rounds/rounds.module';
-import { PaymentsModule } from '../payments/payments.module';
 import { RealtimeModule } from '../realtime/realtime.module';
 import { RegistrationsModule } from '../registrations/registrations.module';
 import { TournamentsModule } from '../tournaments/tournaments.module';
@@ -30,7 +29,8 @@ import { TournamentsModule } from '../tournaments/tournaments.module';
     AuthModule,
     RolesModule,
     TournamentsModule,
-    PaymentsModule,
+    // PaymentsModule (PayPal checkout) intentionally detached: paid tournaments
+    // are confirmed manually by the organizer. Re-attach from tag v1.0-paypal.
     RegistrationsModule,
     RoundsModule,
     JudgesModule,

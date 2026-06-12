@@ -214,6 +214,17 @@
           <a routerLink="/aviso-legal" class="hover:text-stone-700 dark:hover:text-stone-300">Aviso legal</a>
         </nav>
         <p class="w-full sm:w-auto">Pokémon y Pokémon TCG son marcas de sus respectivos propietarios. Trainer Arena no está afiliada.</p>
+        @if (recaptcha.enabled()) {
+          <p class="w-full">
+            Este sitio está protegido por reCAPTCHA y se aplican la
+            <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer"
+               class="underline underline-offset-2 hover:text-stone-700 dark:hover:text-stone-300">política de privacidad</a>
+            y los
+            <a href="https://policies.google.com/terms" target="_blank" rel="noopener noreferrer"
+               class="underline underline-offset-2 hover:text-stone-700 dark:hover:text-stone-300">términos</a>
+            de Google.
+          </p>
+        }
       </div>
     </div>
   </footer>

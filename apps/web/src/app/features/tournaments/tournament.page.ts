@@ -116,8 +116,21 @@ import { TournamentHeaderComponent } from './tournament-header.component';
                 </div>
               } @else if (v.registrationStatus === 'pending_payment') {
                 <p class="alert-warning" role="status">
-                  Tu inscripción está pendiente de pago.
+                  Tu plaza está reservada, <strong>pendiente de que el organizador confirme tu
+                  pago</strong>. Recibirás un email cuando la confirme.
                 </p>
+                @if (t.paymentInstructions) {
+                  <div class="rounded-lg bg-stone-50 px-4 py-3 dark:bg-stone-800/40">
+                    <p class="font-medium text-stone-800 dark:text-stone-200">Cómo pagar</p>
+                    <p class="mt-1 whitespace-pre-line text-stone-600 dark:text-stone-400">{{ t.paymentInstructions }}</p>
+                  </div>
+                }
+                @if (dropError()) {
+                  <p class="alert-error" role="alert">{{ dropError() }}</p>
+                }
+                <button type="button" (click)="drop()" [disabled]="dropping()" class="btn-danger-outline btn-sm">
+                  {{ dropping() ? 'Procesando…' : 'Cancelar solicitud' }}
+                </button>
               } @else if (v.registrationStatus === 'dropped') {
                 <p class="alert-info" role="status">
                   Te diste de baja de este torneo.

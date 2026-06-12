@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { computed, inject, Injectable, PLATFORM_ID, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import type { RoleName } from '@apptorneos/shared';
+import { RecaptchaService } from './recaptcha.service';
 
 export interface AuthUser {
   id: number;
@@ -20,6 +21,7 @@ interface MeResponse {
 export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly recaptcha = inject(RecaptchaService);
   private loadPromise: Promise<void> | null = null;
 
   readonly user = signal<AuthUser | null>(null);
@@ -45,15 +47,17 @@ export class AuthService {
   }
 
   async register(name: string, email: string, password: string): Promise<void> {
+    const headers = await this.recaptcha.headers('registro');
     const res = await firstValueFrom(
-      this.http.post<MeResponse>('/api/auth/register', { name, email, password })
+      this.http.post<MeResponse>('/api/auth/register', { name, email, password }, { headers })
     );
     this.user.set(res.user);
   }
 
   async login(email: string, password: string): Promise<void> {
+    const headers = await this.recaptcha.headers('login');
     const res = await firstValueFrom(
-      this.http.post<MeResponse>('/api/auth/login', { email, password })
+      this.http.post<MeResponse>('/api/auth/login', { email, password }, { headers })
     );
     this.user.set(res.user);
   }
@@ -87,12 +91,16 @@ export class AuthService {
     return firstValueFrom(this.http.post('/api/auth/resend-verification', {}));
   }
 
-  forgotPassword(email: string): Promise<unknown> {
-    return firstValueFrom(this.http.post('/api/auth/forgot-password', { email }));
+  async forgotPassword(email: string): Promise<unknown> {
+    const headers = await this.recaptcha.headers('recuperar_contrasena');
+    return firstValueFrom(this.http.post('/api/auth/forgot-password', { email }, { headers }));
   }
 
-  resetPassword(email: string, token: string, password: string): Promise<unknown> {
-    return firstValueFrom(this.http.post('/api/auth/reset-password', { email, token, password }));
+  async resetPassword(email: string, token: string, password: string): Promise<unknown> {
+    const headers = await this.recaptcha.headers('restablecer_contrasena');
+    return firstValueFrom(
+      this.http.post('/api/auth/reset-password', { email, token, password }, { headers })
+    );
   }
 
   async updateProfile(name: string, email: string): Promise<void> {

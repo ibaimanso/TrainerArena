@@ -89,7 +89,7 @@ export default class MyTournamentsPage implements OnInit {
   protected statusLabel(r: MyRegistration): string {
     const labels: Record<string, string> = {
       active: 'Inscrito',
-      pending_payment: 'Pendiente de pago',
+      pending_payment: 'Pendiente de confirmación',
       dropped: 'Retirado',
     };
     return labels[r.status] ?? r.status;

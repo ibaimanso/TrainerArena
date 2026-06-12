@@ -27,6 +27,7 @@ export interface TournamentSummary {
 
 export interface TournamentDetail extends TournamentSummary {
   description: string | null;
+  paymentInstructions: string | null;
 }
 
 export interface ViewerContext {
@@ -59,7 +60,7 @@ export interface CreateTournamentPayload {
   topCutBo: number;
   topCutSize: number;
   feeAmount: number;
-  paypalAccount?: string;
+  paymentInstructions?: string;
 }
 
 export interface AdminTournament extends TournamentSummary {

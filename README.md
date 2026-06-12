@@ -2,7 +2,7 @@
 
 Aplicación web en español para organizar torneos online de Pokémon TCG: rondas
 suizas con timer autoritativo, top cut, inscripciones gratuitas o de pago
-(PayPal), decklists de TCG Live, auto-reporte con confirmación, llamadas a juez
+(confirmadas por el organizador), decklists de TCG Live, auto-reporte con confirmación, llamadas a juez
 con chat en vivo y páginas públicas en tiempo real.
 
 Especificación funcional completa: [`SPEC.md`](./SPEC.md) · Plan de
@@ -20,7 +20,7 @@ construcción: [`PLAN.md`](./PLAN.md) · Decisiones técnicas:
 | Jobs       | BullMQ (Redis), retardos exactos en ms              |
 | Tiempo real| Soketi (protocolo Pusher) + pusher-js               |
 | Emails     | Nodemailer (Mailpit en desarrollo), encolados       |
-| Pagos      | PayPal Checkout v2 + webhooks firmados              |
+| Pagos      | Cuota pagada al organizador; confirmación manual    |
 
 ## Requisitos
 
@@ -75,7 +75,7 @@ Checklist antes de abrir al público:
 - [ ] Secretos nuevos en `.env` (SESSION_SECRET, APP_KEY, contraseñas)
 - [ ] SMTP transaccional con el dominio propio (SPF/DKIM) — sin esto los
       emails de verificación caen en spam
-- [ ] PayPal en modo live + webhook creado hacia `https://<dominio>/api/webhooks/paypal`
+- [ ] Claves reCAPTCHA v3 del dominio en `.env` (google.com/recaptcha/admin)
 - [ ] Backup diario de PostgreSQL (`pg_dump` + destino externo)
 - [ ] Uptime monitor sobre `/health` y captura de errores (p. ej. Sentry)
 - [ ] Rellenar los `[COMPLETAR]` de las páginas legales (titular, NIF, domicilio)
