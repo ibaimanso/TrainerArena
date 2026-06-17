@@ -50,6 +50,9 @@ pg.log
 prodbuild.log
 studio.log
 lint-test.log
+# Redis dump written by the local portable redis-server
+dump.rdb
+*.rdb
 
 # agent tooling (Claude Code skills, local agent config)
 .claude/
