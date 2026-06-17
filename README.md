@@ -63,7 +63,7 @@ En un VPS con Docker y un dominio apuntando a su IP:
 git clone <repo> && cd appTorneos
 cp .env.production.example .env   # rellenar TODO (secretos con: openssl rand -hex 32)
 docker compose -f docker-compose.prod.yml up -d --build
-docker compose -f docker-compose.prod.yml exec api pnpm prisma db seed   # roles + superadmin
+docker compose -f docker-compose.prod.yml exec api node seed/seed.js   # roles + superadmin
 ```
 
 Las migraciones se aplican solas al arrancar el contenedor `api`

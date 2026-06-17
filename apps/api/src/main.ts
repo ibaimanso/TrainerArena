@@ -3,6 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { RedisStore } from 'connect-redis';
 import cookieParser from 'cookie-parser';
+import type { NextFunction, Request, Response } from 'express';
 import session from 'express-session';
 import type Redis from 'ioredis';
 import { AppModule } from './app/app.module';
@@ -17,9 +18,30 @@ async function bootstrap(): Promise<void> {
   });
   const isProduction = process.env.NODE_ENV === 'production';
 
+  // Fail fast in production rather than silently falling back to the insecure
+  // dev defaults — a missing secret here would break session/URL signing security.
+  const sessionSecret = process.env.SESSION_SECRET;
+  if (isProduction && (!sessionSecret || !process.env.APP_KEY)) {
+    throw new Error(
+      'SESSION_SECRET and APP_KEY are required in production (set them in .env).'
+    );
+  }
+
   app.setGlobalPrefix('api', { exclude: ['health', 'ready'] });
   app.set('trust proxy', 1);
+  // Free graceful shutdown: on SIGTERM (docker stop) NestJS runs onApplicationShutdown
+  // hooks so the BullMQ workers (mail/payments/rounds) drain instead of being killed.
+  app.enableShutdownHooks();
   app.use(cookieParser());
+
+  // Baseline security headers (Caddy already adds HSTS for the .app domain).
+  app.use((_req: Request, res: Response, next: NextFunction) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    res.setHeader('X-DNS-Prefetch-Control', 'off');
+    next();
+  });
 
   const redis = app.get<Redis>(REDIS);
   // The client is lazy (lazyConnect + enableOfflineQueue: false): connect now
@@ -29,7 +51,7 @@ async function bootstrap(): Promise<void> {
     session({
       store: new RedisStore({ client: createSessionStoreClient(redis), prefix: 'session:' }),
       name: process.env.SESSION_COOKIE_NAME || 'apptorneos_session',
-      secret: process.env.SESSION_SECRET || 'insecure-session-secret',
+      secret: sessionSecret || 'insecure-session-secret',
       resave: false,
       saveUninitialized: false,
       cookie: {

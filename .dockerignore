@@ -1,0 +1,40 @@
+# Trainer Arena — keep the Docker build context small and free of secrets.
+# Without this, `docker build` would ship .tools/ (portable Postgres/Redis +
+# zips), node_modules, .git and the .env files into the build context.
+
+# Dependencies & build output (reinstalled/rebuilt inside the image)
+node_modules
+**/node_modules
+dist
+tmp
+.nx
+.angular
+coverage
+
+# Local dev infrastructure (portable Postgres/Redis/Mailpit — huge, never needed)
+.tools
+*.zip
+pg.log
+*.serve.log
+studio.log
+
+# Version control & IDE
+.git
+.gitignore
+.vscode
+.idea
+
+# Secrets & local env — MUST NOT enter the image build context
+.env
+.env.*
+!.env.production.example
+
+# Logs & OS cruft
+*.log
+.DS_Store
+Thumbs.db
+
+# Docs and CI not needed at build time
+*.md
+.github
+deploy/backups

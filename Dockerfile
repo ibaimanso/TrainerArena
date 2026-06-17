@@ -16,6 +16,10 @@ COPY . .
 RUN pnpm prisma generate \
   && pnpm nx build api --configuration=production \
   && pnpm nx build web --configuration=production
+# Compile the DB seeder to plain JS so the prod api image (no ts-node) can run it.
+RUN pnpm exec tsc apps/api/prisma/seed.ts apps/api/prisma/seed-demo.ts \
+  --outDir dist/seed --module commonjs --target es2021 \
+  --esModuleInterop --skipLibCheck --moduleResolution node
 
 # ---------- api runtime ----------
 # dist/apps/api contains a generated package.json/pnpm-lock.yaml with the
@@ -28,6 +32,7 @@ RUN apt-get update \
 WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=build /app/dist/apps/api ./
+COPY --from=build /app/dist/seed ./seed
 COPY apps/api/prisma ./prisma
 RUN pnpm install --prod --frozen-lockfile \
   && pnpm prisma generate --schema prisma/schema.prisma
