@@ -118,12 +118,11 @@ El dominio ya está puesto. Solo faltan:
 - `MAIL_HOST`, `MAIL_USER`, `MAIL_PASSWORD` → los de Brevo (paso 4)
 - `RECAPTCHA_SITE_KEY`, `RECAPTCHA_SECRET_KEY` → los de Google (paso 5)
 
-### b) Páginas legales (obligatorio en España si abres al público)
-Edita estos 3 archivos y sustituye los `[COMPLETAR]` por tus datos reales
-(nombre/razón social, NIF, domicilio, ciudad para el fuero):
-- `apps/web/src/app/features/legal/legal-notice.page.ts`
-- `apps/web/src/app/features/legal/privacy.page.ts`
-- `apps/web/src/app/features/legal/terms.page.ts`
+### b) Páginas legales
+La web solo publica una **Política de privacidad** (en `/privacidad`), suficiente
+mientras no haya ventas. No requiere datos adicionales: el responsable se identifica
+por el email de contacto. Si en el futuro abres ventas, habrá que añadir aviso legal
+y términos con tus datos fiscales (titular, NIF, domicilio).
 
 ---
 

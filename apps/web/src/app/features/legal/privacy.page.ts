@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
-/** Privacy policy (GDPR baseline). [COMPLETAR] marks data the owner must fill in. */
+/** Privacy policy (GDPR baseline). */
 @Component({
   imports: [RouterLink],
   template: `
@@ -14,9 +14,10 @@ import { RouterLink } from '@angular/router';
       <section class="space-y-2">
         <h2 class="section-title">1. Responsable del tratamiento</h2>
         <p>
-          [COMPLETAR: nombre y apellidos o razón social del titular], con NIF
-          [COMPLETAR] y domicilio en [COMPLETAR] (en adelante, «Trainer Arena»).
-          Contacto: <a href="mailto:trainerarenacontact@gmail.com" class="link">trainerarenacontact&#64;gmail.com</a>.
+          El responsable del tratamiento de tus datos es la persona física que opera Trainer Arena
+          (en adelante, «Trainer Arena»). Para cualquier cuestión relativa a tus datos personales,
+          puedes contactar en
+          <a href="mailto:trainerarenacontact@gmail.com" class="link">trainerarenacontact&#64;gmail.com</a>.
         </p>
       </section>
 
@@ -33,9 +34,10 @@ import { RouterLink } from '@angular/router';
             torneo y comunicación contigo durante el mismo.
           </li>
           <li>
-            <strong class="text-stone-800 dark:text-stone-200">Pagos:</strong> los procesa PayPal; Trainer Arena
-            no almacena tarjetas ni credenciales de pago, solo el identificador de la transacción,
-            el importe y su estado, a efectos de justificar la inscripción.
+            <strong class="text-stone-800 dark:text-stone-200">Inscripciones de pago:</strong> cuando un torneo
+            tiene cuota, el pago se realiza de forma personal al organizador según las instrucciones de cada
+            torneo. Trainer Arena no procesa pagos ni almacena tarjetas; solo guarda el estado de la
+            inscripción (pendiente, confirmada o rechazada) a efectos de organización.
           </li>
           <li>
             <strong class="text-stone-800 dark:text-stone-200">Contenido de la plataforma:</strong> decklists,
@@ -48,7 +50,7 @@ import { RouterLink } from '@angular/router';
       <section class="space-y-2">
         <h2 class="section-title">3. Base jurídica</h2>
         <p>
-          La ejecución del contrato (arts. 6.1.b RGPD) para la cuenta, inscripciones y pagos, y el
+          La ejecución del contrato (arts. 6.1.b RGPD) para la cuenta y las inscripciones, y el
           interés legítimo en mantener la integridad competitiva de los torneos (resolución de
           disputas y auditoría de acciones de administración).
         </p>
@@ -66,9 +68,8 @@ import { RouterLink } from '@angular/router';
       <section class="space-y-2">
         <h2 class="section-title">5. Destinatarios</h2>
         <p>
-          PayPal (pagos), nuestro proveedor de correo electrónico (envío de emails transaccionales)
-          y nuestro proveedor de alojamiento. No vendemos ni cedemos tus datos a terceros con fines
-          comerciales.
+          Nuestro proveedor de correo electrónico (envío de emails transaccionales) y nuestro proveedor
+          de alojamiento. No vendemos ni cedemos tus datos a terceros con fines comerciales.
         </p>
       </section>
 
@@ -76,7 +77,7 @@ import { RouterLink } from '@angular/router';
         <h2 class="section-title">6. Conservación</h2>
         <p>
           Mantenemos tus datos mientras tu cuenta esté activa. Si la eliminas, se borran tus datos
-          personales; los registros de pago se conservan el tiempo exigido por la normativa fiscal.
+          personales, salvo los que debamos conservar por obligación legal.
         </p>
       </section>
 
