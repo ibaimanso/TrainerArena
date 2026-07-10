@@ -129,6 +129,13 @@ exit
 Crea el superadmin a partir de `SUPERADMIN_*`. (`SEED_DEMO=false` evita los
 datos de demostración.)
 
+> Si `railway ssh` se queda colgado (pasa en algunas redes), alternativa
+> desde tu máquina: copia `DATABASE_PUBLIC_URL` de las Variables del
+> servicio Postgres y ejecuta
+> `$env:DATABASE_URL='<esa url>'; $env:SUPERADMIN_EMAIL='...'; $env:SUPERADMIN_PASSWORD='...'; $env:SUPERADMIN_NAME='...'; pnpm prisma db seed`.
+> Lo mismo sirve para Redis: `redis-cli -u <REDIS_PUBLIC_URL> CONFIG SET
+> maxmemory-policy noeviction`.
+
 ## 5. Dominio propio (trainerapp.app)
 
 1. Servicio `web` → Settings → Networking → **Custom Domain** →
