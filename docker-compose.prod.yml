@@ -42,7 +42,7 @@ services:
   api:
     build:
       context: .
-      target: api
+      dockerfile: Dockerfile.api
     restart: unless-stopped
     env_file: .env
     environment:
@@ -61,7 +61,7 @@ services:
   web:
     build:
       context: .
-      target: web
+      dockerfile: Dockerfile.web
     restart: unless-stopped
     environment:
       PORT: '4000'
