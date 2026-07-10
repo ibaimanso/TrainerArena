@@ -33,8 +33,17 @@ el esquema **sin borrar datos**.
 1. `+ Create` → **GitHub Repo** → selecciona el repo. Renombra el servicio a
    `api` (Settings → Service name) — el nombre importa: define su dominio
    privado `api.railway.internal`.
-2. Settings → **Config-as-code** → Railway config file:
-   `deploy/railway/api.json` (usa `Dockerfile.api` y healthcheck `/health`).
+2. **⚠️ Paso obligatorio** — Railway solo auto-descubre `railway.json` en la
+   raíz del repo; los ficheros en `deploy/railway/` hay que declararlos:
+   Settings → **Config-as-code** → Railway config file →
+   `deploy/railway/api.json` (define `Dockerfile.api` y healthcheck
+   `/health`). Sin esto Railway usa el builder Railpack y el build falla
+   («no start script»). Si el primer deploy ya arrancó, cancélalo, guarda
+   este ajuste y haz *Redeploy*.
+
+   > Alternativa equivalente: añade la variable
+   > `RAILWAY_DOCKERFILE_PATH=Dockerfile.api` y configura el healthcheck a
+   > mano (Settings → Deploy → Healthcheck Path: `/health`).
 3. Variables (pestaña **Variables**, botón *Raw Editor*). Las `${{...}}` son
    referencias de Railway y se resuelven solas:
 
@@ -82,8 +91,10 @@ el esquema **sin borrar datos**.
 ## 3. Servicio `web`
 
 1. `+ Create` → **GitHub Repo** → el mismo repo. Renómbralo a `web`.
-2. Settings → Config-as-code: `deploy/railway/web.json`
-   (usa `Dockerfile.web` y healthcheck `/healthz`).
+2. **⚠️ Paso obligatorio** (igual que en la API): Settings →
+   **Config-as-code** → `deploy/railway/web.json` (define `Dockerfile.web`
+   y healthcheck `/healthz`). Alternativa: variable
+   `RAILWAY_DOCKERFILE_PATH=Dockerfile.web` + healthcheck manual.
 3. Variables:
 
    ```env
@@ -173,6 +184,7 @@ Sin esto la app funciona con polling. Para tiempo real:
 
 | Síntoma | Causa probable |
 |---|---|
+| Build falla con Railpack / «no start script» | El servicio no tiene aplicado su config file de `deploy/railway/` (§2.2 / §3.2) — Railway no lo descubre solo |
 | 502 en `/api/*` | `API_URL` mal puesto en `web`, o la API caída (mira sus logs) |
 | Login devuelve 200 pero luego 401 | Redis no accesible desde la API (`REDIS_URL`) |
 | El healthcheck de `api` no pasa | Migraciones fallando al arrancar — logs del deploy |
