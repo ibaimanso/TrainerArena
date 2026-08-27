@@ -163,6 +163,49 @@ export class DecklistsController {
     };
   }
 
+  /**
+   * Rival decklist from the standings table: any authenticated user, only when
+   * the tournament enables showOpponentDecklists and the list is locked
+   * (tournament in progress or finished).
+   */
+  @Get('tournaments/:slug/players/:userId/decklist')
+  async opponentDecklist(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('slug') slug: string,
+    @Param('userId', ParseIntPipe) userId: number
+  ) {
+    const tournament = await this.tournaments.publicBySlugOrFail(slug);
+    const decklist = await this.prisma.decklist.findUnique({
+      where: { tournamentId_userId: { tournamentId: tournament.id, userId } },
+      include: { user: { select: { id: true, name: true } } },
+    });
+    if (!decklist) throw new NotFoundException('Decklist no encontrada.');
+
+    const approvedJudge = await this.isApprovedJudge(tournament.id, user.id);
+    const allowed = canViewDecklist(this.policyUser(user), {
+      tournament: {
+        id: tournament.id,
+        adminId: tournament.adminId,
+        status: tournament.status as TournamentStatus,
+      },
+      decklist: { userId: decklist.userId, lockedAt: decklist.lockedAt?.toISOString() ?? null },
+      isApprovedJudge: approvedJudge,
+      rivalsMayView: tournament.showOpponentDecklists,
+    });
+    if (!allowed) {
+      throw new ForbiddenException('Las decklists de este torneo no son públicas.');
+    }
+    return {
+      decklist: {
+        playerName: decklist.user.name,
+        rawText: decklist.rawText,
+        parsed: decklist.parsedCards,
+        submittedAt: decklist.submittedAt.toISOString(),
+        lockedAt: decklist.lockedAt?.toISOString() ?? null,
+      },
+    };
+  }
+
   /** Judge/admin listing (SPEC §9 visibility). */
   @Get('judge/tournaments/:slug/decklists')
   async list(@CurrentUser() user: AuthenticatedUser, @Param('slug') slug: string) {

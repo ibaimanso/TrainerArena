@@ -48,6 +48,7 @@ import {
                 <th scope="col">TCG Live</th>
                 <th scope="col">Email</th>
                 <th scope="col">Estado</th>
+                <th scope="col">Pasos</th>
                 <th scope="col">Inscrito</th>
                 <th scope="col">Acciones</th>
               </tr>
@@ -62,6 +63,18 @@ import {
                     <span [class]="r.status === 'active' ? 'badge-success' : r.status === 'pending_payment' ? 'badge-warning' : 'badge-neutral'">
                       {{ statusLabel(r.status) }}
                     </span>
+                  </td>
+                  <td>
+                    @if (r.status === 'active') {
+                      <div class="flex flex-wrap gap-1">
+                        <span [class]="r.decklistSubmitted ? 'badge-success' : 'badge-warning'">
+                          {{ r.decklistSubmitted ? 'Lista ✓' : 'Sin lista' }}
+                        </span>
+                        <span [class]="r.participationConfirmed ? 'badge-success' : 'badge-warning'">
+                          {{ r.participationConfirmed ? 'Confirmado ✓' : 'Sin confirmar' }}
+                        </span>
+                      </div>
+                    }
                   </td>
                   <td class="whitespace-nowrap text-stone-500 dark:text-stone-400">{{ r.registeredAt | date: 'd MMM, HH:mm' }}</td>
                   <td>
@@ -80,7 +93,7 @@ import {
                   </td>
                 </tr>
               } @empty {
-                <tr><td colspan="6" class="py-6 text-center text-stone-500 dark:text-stone-400">Sin inscripciones todavía.</td></tr>
+                <tr><td colspan="7" class="py-6 text-center text-stone-500 dark:text-stone-400">Sin inscripciones todavía.</td></tr>
               }
             </tbody>
           </table>

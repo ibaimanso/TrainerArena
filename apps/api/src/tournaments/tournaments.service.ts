@@ -46,6 +46,26 @@ export class TournamentsService {
         'Indica cómo deben pagarte los jugadores (Bizum, transferencia…) en los torneos de pago.'
       );
     }
+    const format = dto.format ?? 'standard';
+    let matchdayDates: Date[] = [];
+    if (format === 'league') {
+      matchdayDates = (dto.matchdayDates ?? []).map((d) => new Date(d));
+      if (matchdayDates.length !== dto.swissRounds) {
+        throw new UnprocessableEntityException(
+          'En formato liga debes indicar una fecha por jornada (tantas como rondas).'
+        );
+      }
+      if (matchdayDates.some((d) => Number.isNaN(d.getTime()))) {
+        throw new UnprocessableEntityException('Alguna fecha de jornada no es válida.');
+      }
+      for (let i = 1; i < matchdayDates.length; i++) {
+        if (matchdayDates[i] <= matchdayDates[i - 1]) {
+          throw new UnprocessableEntityException(
+            'Las fechas de las jornadas deben ir en orden cronológico.'
+          );
+        }
+      }
+    }
     return this.prisma.tournament.create({
       data: {
         publicId: ulid(),
@@ -55,6 +75,17 @@ export class TournamentsService {
         description: dto.description ?? null,
         startAt,
         status: 'draft',
+        format,
+        showOpponentDecklists: dto.showOpponentDecklists ?? false,
+        matchdays:
+          format === 'league'
+            ? {
+                create: matchdayDates.map((scheduledAt, index) => ({
+                  matchdayNumber: index + 1,
+                  scheduledAt,
+                })),
+              }
+            : undefined,
         maxPlayers: dto.maxPlayers,
         swissRounds: dto.swissRounds,
         roundTimeMinutes: dto.roundTimeMinutes,
@@ -86,6 +117,14 @@ export class TournamentsService {
     const tournament = await this.bySlugOrFail(slug);
     if (tournament.status === 'draft') throw new NotFoundException('Torneo no encontrado.');
     return tournament;
+  }
+
+  /** League matchdays ordered by number (empty for standard tournaments). */
+  async matchdays(tournamentId: number) {
+    return this.prisma.leagueMatchday.findMany({
+      where: { tournamentId },
+      orderBy: { matchdayNumber: 'asc' },
+    });
   }
 
   /** Seats counted as active + pending_payment (a pending payment reserves the seat, SPEC §8.1). */

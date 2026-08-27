@@ -4,6 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import type {
   JudgeApplicationStatus,
   RegistrationStatus,
+  TournamentFormat,
   TournamentStatus,
 } from '@apptorneos/shared';
 
@@ -13,6 +14,8 @@ export interface TournamentSummary {
   name: string;
   startAt: string;
   status: TournamentStatus;
+  format: TournamentFormat;
+  showOpponentDecklists: boolean;
   maxPlayers: number;
   activeCount: number;
   feeAmount: number;
@@ -25,9 +28,15 @@ export interface TournamentSummary {
   checkinMinutes: number;
 }
 
+export interface TournamentMatchday {
+  matchdayNumber: number;
+  scheduledAt: string;
+}
+
 export interface TournamentDetail extends TournamentSummary {
   description: string | null;
   paymentInstructions: string | null;
+  matchdays: TournamentMatchday[];
 }
 
 export interface ViewerContext {
@@ -40,6 +49,8 @@ export interface ViewerContext {
   hasJudgeRole: boolean;
   judgeApplicationStatus: JudgeApplicationStatus | null;
   isApprovedJudge: boolean;
+  decklistSubmitted: boolean;
+  participationConfirmed: boolean;
 }
 
 export interface LandingData {
@@ -52,6 +63,9 @@ export interface CreateTournamentPayload {
   name: string;
   description?: string;
   startAt: string;
+  format?: TournamentFormat;
+  matchdayDates?: string[];
+  showOpponentDecklists?: boolean;
   maxPlayers: number;
   swissRounds: number;
   roundTimeMinutes: number;

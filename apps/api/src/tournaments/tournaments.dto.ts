@@ -1,4 +1,7 @@
 import {
+  ArrayMaxSize,
+  IsArray,
+  IsBoolean,
   IsIn,
   IsInt,
   IsISO8601,
@@ -25,6 +28,21 @@ export class CreateTournamentDto {
 
   @IsISO8601({}, { message: 'La fecha de inicio no es válida.' })
   startAt!: string;
+
+  @IsOptional()
+  @IsIn(['standard', 'league'], { message: 'El formato debe ser estándar o liga.' })
+  format?: 'standard' | 'league';
+
+  /** League only: one date per jornada; must match swissRounds in length. */
+  @ValidateIf((o: CreateTournamentDto) => o.format === 'league')
+  @IsArray({ message: 'Las fechas de las jornadas son obligatorias en formato liga.' })
+  @ArrayMaxSize(15, { message: 'Una liga puede tener 15 jornadas como máximo.' })
+  @IsISO8601({}, { each: true, message: 'Alguna fecha de jornada no es válida.' })
+  matchdayDates?: string[];
+
+  @IsOptional()
+  @IsBoolean({ message: 'La visibilidad de las decklists debe ser un booleano.' })
+  showOpponentDecklists?: boolean;
 
   @IsInt({ message: 'El número máximo de jugadores debe ser un entero.' })
   @Min(4, { message: 'El torneo necesita al menos 4 jugadores.' })

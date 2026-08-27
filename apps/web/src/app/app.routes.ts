@@ -64,6 +64,12 @@ export const appRoutes: Route[] = [
     title: 'Ronda actual — Trainer Arena',
   },
   {
+    path: 'torneo/:slug/jugador/:userId/lista',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/tournaments/player-decklist.page'),
+    title: 'Decklist — Trainer Arena',
+  },
+  {
     path: 'torneo/:slug/inscripcion',
     canActivate: [verifiedGuard],
     loadComponent: () => import('./features/tournaments/register.page'),

@@ -173,6 +173,52 @@ export class RegistrationsService {
     return registration;
   }
 
+  /**
+   * Second post-registration step: after submitting their decklist the player
+   * confirms they will actually play. Both steps are required to be paired in
+   * round 1 (players missing either are auto-dropped when R1 is generated).
+   */
+  async confirmParticipation(
+    tournament: Tournament,
+    userId: number
+  ): Promise<TournamentRegistration> {
+    const registration = await this.prisma.tournamentRegistration.findUnique({
+      where: { tournamentId_userId: { tournamentId: tournament.id, userId } },
+    });
+    if (!registration) {
+      throw new NotFoundException('No estás inscrito en este torneo.');
+    }
+    if (registration.status !== 'active') {
+      throw new UnprocessableEntityException(
+        registration.status === 'pending_payment'
+          ? 'Tu inscripción sigue pendiente de pago: el organizador debe confirmarla antes.'
+          : 'Tu inscripción no está activa.'
+      );
+    }
+    if (registration.participationConfirmedAt !== null) {
+      return registration; // idempotent: already confirmed
+    }
+    const rounds = await this.prisma.round.count({ where: { tournamentId: tournament.id } });
+    if (rounds > 0) {
+      throw new UnprocessableEntityException(
+        'La primera ronda ya se ha generado: ya no es posible confirmar la participación.'
+      );
+    }
+    const decklist = await this.prisma.decklist.findUnique({
+      where: { tournamentId_userId: { tournamentId: tournament.id, userId } },
+      select: { id: true },
+    });
+    if (!decklist) {
+      throw new UnprocessableEntityException(
+        'Antes de confirmar tu participación debes enviar tu decklist.'
+      );
+    }
+    return this.prisma.tournamentRegistration.update({
+      where: { id: registration.id },
+      data: { participationConfirmedAt: new Date() },
+    });
+  }
+
   /** Drop (SPEC §6.9): plays the current round, excluded from the next; seat NOT freed. */
   async drop(tournament: Tournament, userId: number): Promise<TournamentRegistration> {
     const registration = await this.prisma.tournamentRegistration.findUnique({

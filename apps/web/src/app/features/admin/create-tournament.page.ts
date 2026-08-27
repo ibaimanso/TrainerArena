@@ -71,6 +71,17 @@ import { TournamentsService } from '../../core/tournaments.service';
             <div class="space-y-5">
               <h2 class="section-title">Capacidad y formato</h2>
               <div>
+                <label for="format" class="label">Tipo de torneo</label>
+                <select id="format" formControlName="format" class="input">
+                  <option value="standard">Torneo estándar (suizo + top cut)</option>
+                  <option value="league">Liga (jornadas con fecha programada)</option>
+                </select>
+                <p class="hint">
+                  En una liga cada ronda es una jornada con fecha propia, y además de la
+                  clasificación general hay una clasificación por jornada.
+                </p>
+              </div>
+              <div>
                 <label for="maxPlayers" class="label">Máximo de jugadores (4–9999)</label>
                 <input id="maxPlayers" type="number" formControlName="maxPlayers" min="4" max="9999"
                        (change)="autofill()" required class="input" />
@@ -80,10 +91,14 @@ import { TournamentsService } from '../../core/tournaments.service';
               </div>
               <div class="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label for="swissRounds" class="label">Rondas suizas (1–15)</label>
+                  <label for="swissRounds" class="label">
+                    {{ isLeague() ? 'Jornadas (1–15)' : 'Rondas suizas (1–15)' }}
+                  </label>
                   <input id="swissRounds" type="number" formControlName="swissRounds" min="1" max="15"
                          required class="input" />
-                  <p class="hint">Número de rondas de la fase suiza.</p>
+                  <p class="hint">
+                    {{ isLeague() ? 'Número de jornadas de la liga.' : 'Número de rondas de la fase suiza.' }}
+                  </p>
                 </div>
                 <div>
                   <label for="topCutSize" class="label">Top cut</label>
@@ -114,6 +129,34 @@ import { TournamentsService } from '../../core/tournaments.service';
                   <p class="hint">Formato de las rondas eliminatorias.</p>
                 </div>
               </div>
+
+              @if (isLeague()) {
+                <fieldset class="space-y-3 rounded-lg border border-stone-200 dark:border-stone-800 p-4">
+                  <legend class="px-1 text-sm font-semibold text-stone-900 dark:text-stone-100">
+                    Fechas de las jornadas
+                  </legend>
+                  <p class="hint">Indica qué día (y hora) se jugará cada jornada, en orden cronológico.</p>
+                  @for (date of matchdayDates(); track $index) {
+                    <div class="flex items-center gap-3">
+                      <span class="w-24 shrink-0 text-sm font-medium text-stone-700 dark:text-stone-300">
+                        Jornada {{ $index + 1 }}
+                      </span>
+                      <input type="datetime-local" [value]="date" required class="input"
+                             [attr.aria-label]="'Fecha de la jornada ' + ($index + 1)"
+                             (change)="setMatchdayDate($index, $event)" />
+                    </div>
+                  }
+                </fieldset>
+              }
+
+              <label class="flex items-start gap-2.5 rounded-lg border border-stone-200 dark:border-stone-800 p-4">
+                <input type="checkbox" formControlName="showOpponentDecklists" class="mt-0.5" />
+                <span class="text-sm text-stone-700 dark:text-stone-300">
+                  <span class="font-semibold text-stone-900 dark:text-stone-100">Listas visibles entre rivales.</span>
+                  Los jugadores podrán ver las decklists de sus rivales desde la tabla de
+                  clasificación una vez bloqueadas (al empezar la primera ronda).
+                </span>
+              </label>
             </div>
           }
           @case (2) {
@@ -166,11 +209,18 @@ import { TournamentsService } from '../../core/tournaments.service';
                     <dd class="font-medium text-stone-900 dark:text-stone-100">{{ form.controls.name.value || '—' }}</dd>
                   </div>
                   <div>
+                    <dt class="text-xs text-stone-500 dark:text-stone-400">Tipo</dt>
+                    <dd class="font-medium text-stone-900 dark:text-stone-100">
+                      {{ isLeague() ? 'Liga' : 'Estándar' }}
+                      @if (form.controls.showOpponentDecklists.value) { · listas visibles }
+                    </dd>
+                  </div>
+                  <div>
                     <dt class="text-xs text-stone-500 dark:text-stone-400">Jugadores</dt>
                     <dd class="font-medium text-stone-900 dark:text-stone-100">Hasta {{ form.controls.maxPlayers.value }}</dd>
                   </div>
                   <div>
-                    <dt class="text-xs text-stone-500 dark:text-stone-400">Rondas suizas</dt>
+                    <dt class="text-xs text-stone-500 dark:text-stone-400">{{ isLeague() ? 'Jornadas' : 'Rondas suizas' }}</dt>
                     <dd class="font-medium text-stone-900 dark:text-stone-100">
                       {{ form.controls.swissRounds.value }} (BO{{ form.controls.swissBo.value }})
                     </dd>
@@ -243,6 +293,8 @@ export default class CreateTournamentPage {
     name: ['', [Validators.required, Validators.maxLength(255)]],
     description: [''],
     startAt: ['', Validators.required],
+    format: ['standard' as 'standard' | 'league', Validators.required],
+    showOpponentDecklists: [false],
     maxPlayers: [16, [Validators.required, Validators.min(4), Validators.max(9999)]],
     swissRounds: [4, [Validators.required, Validators.min(1), Validators.max(15)]],
     topCutSize: [4, Validators.required],
@@ -256,9 +308,32 @@ export default class CreateTournamentPage {
 
   protected readonly isPaid = computed(() => this.feeEurosValue() > 0);
   private readonly feeEurosValue = signal(0);
+  protected readonly isLeague = computed(() => this.formatValue() === 'league');
+  private readonly formatValue = signal<'standard' | 'league'>('standard');
+  /** One datetime-local string per jornada (league only), kept at swissRounds length. */
+  protected readonly matchdayDates = signal<string[]>([]);
 
   constructor() {
     this.form.controls.feeEuros.valueChanges.subscribe((v) => this.feeEurosValue.set(Number(v) || 0));
+    this.form.controls.format.valueChanges.subscribe((v) => {
+      this.formatValue.set(v);
+      this.resizeMatchdays();
+    });
+    this.form.controls.swissRounds.valueChanges.subscribe(() => this.resizeMatchdays());
+    this.resizeMatchdays();
+  }
+
+  private resizeMatchdays(): void {
+    const rounds = Math.min(15, Math.max(0, Number(this.form.controls.swissRounds.value) || 0));
+    const current = this.matchdayDates();
+    this.matchdayDates.set(
+      Array.from({ length: rounds }, (_, i) => current[i] ?? '')
+    );
+  }
+
+  protected setMatchdayDate(index: number, event: Event): void {
+    const value = (event.target as HTMLInputElement).value;
+    this.matchdayDates.update((dates) => dates.map((d, i) => (i === index ? value : d)));
   }
 
   /** Autofill swiss rounds + top cut from the official table (SPEC §5.1). */
@@ -279,7 +354,11 @@ export default class CreateTournamentPage {
       case 0:
         return c.name.valid && c.startAt.valid;
       case 1:
-        return c.maxPlayers.valid && c.swissRounds.valid;
+        return (
+          c.maxPlayers.valid &&
+          c.swissRounds.valid &&
+          (!this.isLeague() || this.matchdayDates().every((d) => d.trim() !== ''))
+        );
       case 2:
         return c.roundTimeMinutes.valid && c.checkinMinutes.valid;
       default:
@@ -301,6 +380,12 @@ export default class CreateTournamentPage {
         name: v.name,
         description: v.description || undefined,
         startAt: new Date(v.startAt).toISOString(),
+        format: v.format,
+        matchdayDates:
+          v.format === 'league'
+            ? this.matchdayDates().map((d) => new Date(d).toISOString())
+            : undefined,
+        showOpponentDecklists: v.showOpponentDecklists,
         maxPlayers: Number(v.maxPlayers),
         swissRounds: Number(v.swissRounds),
         roundTimeMinutes: Number(v.roundTimeMinutes),

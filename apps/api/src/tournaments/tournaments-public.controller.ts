@@ -21,6 +21,9 @@ interface ViewerContext {
   hasJudgeRole: boolean;
   judgeApplicationStatus: JudgeApplicationStatus | null;
   isApprovedJudge: boolean;
+  /** Post-registration two-step state (only meaningful with an active registration). */
+  decklistSubmitted: boolean;
+  participationConfirmed: boolean;
 }
 
 @Controller('tournaments')
@@ -53,9 +56,10 @@ export class TournamentsPublicController {
     @Req() req: Request
   ): Promise<{ tournament: PublicTournamentDetail; viewer: ViewerContext }> {
     const tournament = await this.tournaments.publicBySlugOrFail(slug);
-    const [activeCount, occupied] = await Promise.all([
+    const [activeCount, occupied, matchdays] = await Promise.all([
       this.tournaments.activeSeats(tournament.id),
       this.tournaments.occupiedSeats(tournament.id),
+      this.tournaments.matchdays(tournament.id),
     ]);
 
     const viewer: ViewerContext = {
@@ -68,6 +72,8 @@ export class TournamentsPublicController {
       hasJudgeRole: false,
       judgeApplicationStatus: null,
       isApprovedJudge: false,
+      decklistSubmitted: false,
+      participationConfirmed: false,
     };
 
     const userId = req.session?.userId;
@@ -78,12 +84,16 @@ export class TournamentsPublicController {
       });
       if (user) {
         const roles = user.roles.map((r) => r.role.name as RoleName);
-        const [registration, application] = await Promise.all([
+        const [registration, application, decklist] = await Promise.all([
           this.prisma.tournamentRegistration.findUnique({
             where: { tournamentId_userId: { tournamentId: tournament.id, userId } },
           }),
           this.prisma.judgeApplication.findUnique({
             where: { tournamentId_userId: { tournamentId: tournament.id, userId } },
+          }),
+          this.prisma.decklist.findUnique({
+            where: { tournamentId_userId: { tournamentId: tournament.id, userId } },
+            select: { id: true },
           }),
         ]);
         viewer.isAuthenticated = true;
@@ -95,6 +105,8 @@ export class TournamentsPublicController {
         viewer.judgeApplicationStatus =
           (application?.status as JudgeApplicationStatus) ?? null;
         viewer.isApprovedJudge = application?.status === 'approved';
+        viewer.decklistSubmitted = decklist !== null;
+        viewer.participationConfirmed = registration?.participationConfirmedAt != null;
         viewer.canRegister =
           viewer.isVerified &&
           tournament.status === 'registration_open' &&
@@ -103,6 +115,6 @@ export class TournamentsPublicController {
       }
     }
 
-    return { tournament: toPublicDetail(tournament, activeCount), viewer };
+    return { tournament: toPublicDetail(tournament, activeCount, matchdays), viewer };
   }
 }

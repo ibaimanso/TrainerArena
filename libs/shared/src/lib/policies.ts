@@ -137,13 +137,24 @@ export interface DecklistViewContext {
   tournament: PolicyTournament;
   decklist: PolicyDecklist;
   isApprovedJudge: boolean;
+  /** Tournament option: rivals may view locked decklists from the standings. */
+  rivalsMayView?: boolean;
 }
 
-/** Owner (always), tournament admin, approved judge, superadmin. Never other players. */
+/**
+ * Owner (always), tournament admin, approved judge, superadmin. Other players
+ * only when the tournament enables it and the decklist is already locked
+ * (never before round 1, so nobody scouts an editable list).
+ */
 export function canViewDecklist(user: PolicyUser, ctx: DecklistViewContext): boolean {
   if (ctx.decklist.userId === user.id) return true;
   if (isTournamentAdmin(user, ctx.tournament)) return true;
-  return ctx.isApprovedJudge;
+  if (ctx.isApprovedJudge) return true;
+  return (
+    ctx.rivalsMayView === true &&
+    ctx.decklist.lockedAt !== null &&
+    (ctx.tournament.status === 'in_progress' || ctx.tournament.status === 'finished')
+  );
 }
 
 // ---------- Judge applications ----------

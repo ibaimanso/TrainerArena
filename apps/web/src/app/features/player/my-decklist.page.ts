@@ -4,11 +4,13 @@ import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
 import { apiErrorMessage } from '../../core/api-error';
+import { AuthService } from '../../core/auth.service';
 import { PlayerService, type DecklistView } from '../../core/player.service';
+import { DecklistExportComponent } from '../../shared/decklist-export.component';
 
 /** /torneo/{slug}/mi-decklist (SPEC §9/§12): textarea + parser result; read-only after lock. */
 @Component({
-  imports: [FormsModule, RouterLink, DatePipe],
+  imports: [FormsModule, RouterLink, DatePipe, DecklistExportComponent],
   template: `
     <div class="mx-auto max-w-3xl space-y-6">
       <div class="flex flex-wrap items-center justify-between gap-3">
@@ -59,7 +61,11 @@ import { PlayerService, type DecklistView } from '../../core/player.service';
               <p class="alert-error" role="alert">{{ e }}</p>
             }
             @if (saved()) {
-              <p class="alert-success" role="status">Decklist guardada.</p>
+              <p class="alert-success" role="status">
+                Decklist guardada. <strong>Paso 2:</strong> recuerda
+                <a [routerLink]="['/torneo', slug()]" class="link font-semibold">confirmar tu participación</a>
+                en la página del torneo, o no serás emparejado en la primera ronda.
+              </p>
             }
             @if (canEdit() && !locked()) {
               <button type="button" (click)="save()" [disabled]="saving() || !rawText.trim()"
@@ -76,6 +82,10 @@ import { PlayerService, type DecklistView } from '../../core/player.service';
                 {{ d.parsed.total }} cartas · enviada {{ d.submittedAt | date: 'd MMM, HH:mm' }}
                 @if (d.lockedAt) { · <span class="font-medium">bloqueada</span> }
               </p>
+              <div class="mt-3">
+                <app-decklist-export [playerName]="playerName()" [rawText]="d.rawText"
+                                     [parsed]="d.parsed" />
+              </div>
               <div class="mt-4 space-y-4 text-sm">
                 @for (section of sections(d); track section.title) {
                   @if (section.cards.length > 0) {
@@ -112,6 +122,11 @@ import { PlayerService, type DecklistView } from '../../core/player.service';
 export default class MyDecklistPage implements OnInit {
   readonly slug = input.required<string>();
   private readonly player = inject(PlayerService);
+  private readonly auth = inject(AuthService);
+
+  protected playerName(): string {
+    return this.auth.user()?.name ?? 'Mi decklist';
+  }
 
   protected readonly loading = signal(true);
   protected readonly saving = signal(false);

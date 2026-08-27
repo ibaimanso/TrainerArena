@@ -44,6 +44,24 @@ export class RegistrationsController {
     return { status: registration.status };
   }
 
+  /**
+   * Second post-registration step: confirm participation (requires an active
+   * registration with a submitted decklist, before round 1 is generated).
+   */
+  @Post('tournaments/:slug/confirm-participation')
+  @HttpCode(200)
+  async confirmParticipation(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('slug') slug: string
+  ): Promise<{ status: string; participationConfirmedAt: string | null }> {
+    const tournament = await this.tournaments.publicBySlugOrFail(slug);
+    const registration = await this.registrations.confirmParticipation(tournament, user.id);
+    return {
+      status: registration.status,
+      participationConfirmedAt: registration.participationConfirmedAt?.toISOString() ?? null,
+    };
+  }
+
   @Post('tournaments/:slug/drop')
   @HttpCode(200)
   async drop(
@@ -100,11 +118,18 @@ export class RegistrationsAdminController {
   @Get()
   async list(@CurrentUser() user: AuthenticatedUser, @Param('slug') slug: string) {
     const tournament = await this.managedTournamentOrFail(user, slug);
-    const registrations = await this.prisma.tournamentRegistration.findMany({
-      where: { tournamentId: tournament.id },
-      orderBy: { registeredAt: 'asc' },
-      include: { user: { select: { id: true, name: true, email: true } } },
-    });
+    const [registrations, decklists] = await Promise.all([
+      this.prisma.tournamentRegistration.findMany({
+        where: { tournamentId: tournament.id },
+        orderBy: { registeredAt: 'asc' },
+        include: { user: { select: { id: true, name: true, email: true } } },
+      }),
+      this.prisma.decklist.findMany({
+        where: { tournamentId: tournament.id },
+        select: { userId: true },
+      }),
+    ]);
+    const hasDecklist = new Set(decklists.map((d) => d.userId));
     return {
       registrations: registrations.map((r) => ({
         id: r.id,
@@ -116,6 +141,8 @@ export class RegistrationsAdminController {
         status: r.status,
         registeredAt: r.registeredAt.toISOString(),
         droppedAt: r.droppedAt?.toISOString() ?? null,
+        decklistSubmitted: hasDecklist.has(r.userId),
+        participationConfirmed: r.participationConfirmedAt !== null,
       })),
     };
   }

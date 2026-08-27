@@ -10,6 +10,9 @@ export const TOURNAMENT_STATUSES = [
 ] as const;
 export type TournamentStatus = (typeof TOURNAMENT_STATUSES)[number];
 
+export const TOURNAMENT_FORMATS = ['standard', 'league'] as const;
+export type TournamentFormat = (typeof TOURNAMENT_FORMATS)[number];
+
 export const REGISTRATION_STATUSES = ['pending_payment', 'active', 'dropped'] as const;
 export type RegistrationStatus = (typeof REGISTRATION_STATUSES)[number];
 

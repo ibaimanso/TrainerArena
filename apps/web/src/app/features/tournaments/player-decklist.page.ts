@@ -1,13 +1,11 @@
 import { DatePipe } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
-import { Component, inject, input, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, input, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { firstValueFrom } from 'rxjs';
 import { apiErrorMessage } from '../../core/api-error';
-import type { ParsedDecklist } from '../../core/player.service';
+import { PlayerService, type ParsedDecklist } from '../../core/player.service';
 import { DecklistExportComponent } from '../../shared/decklist-export.component';
 
-interface DecklistDetail {
+interface RivalDecklist {
   playerName: string;
   rawText: string;
   parsed: ParsedDecklist;
@@ -15,14 +13,17 @@ interface DecklistDetail {
   lockedAt: string | null;
 }
 
-/** Judge decklist detail: parsed sections + raw text (SPEC §9). */
+/**
+ * Rival decklist viewed from the standings table. Only available when the
+ * tournament enables showOpponentDecklists and the list is locked.
+ */
 @Component({
   imports: [RouterLink, DatePipe, DecklistExportComponent],
   template: `
     <div class="mx-auto max-w-3xl space-y-6">
       <div class="flex flex-wrap items-center justify-between gap-3">
         <h1 class="page-title">Decklist</h1>
-        <a [routerLink]="['/juez/torneo', slug(), 'decklists']" class="link text-sm">← Volver al listado</a>
+        <a [routerLink]="['/torneo', slug(), 'clasificacion']" class="link text-sm">← Volver a la clasificación</a>
       </div>
 
       @if (error()) {
@@ -47,7 +48,7 @@ interface DecklistDetail {
 
         <div class="grid gap-4 lg:grid-cols-2">
           <section class="card space-y-5 text-sm" aria-label="Lista por secciones">
-            @for (section of sections(d); track section.title) {
+            @for (section of sections(); track section.title) {
               @if (section.cards.length > 0) {
                 <div>
                   <h3 class="section-title flex items-baseline justify-between gap-2 border-b border-stone-100 dark:border-stone-800 pb-2">
@@ -73,36 +74,41 @@ interface DecklistDetail {
             <pre class="mt-3 overflow-x-auto whitespace-pre-wrap rounded-lg bg-stone-50 dark:bg-stone-800/40 p-3 font-mono text-xs leading-relaxed text-stone-600 dark:text-stone-400">{{ d.rawText }}</pre>
           </section>
         </div>
+      } @else if (!error()) {
+        <div class="card space-y-3" aria-label="Cargando decklist">
+          <div class="skeleton h-5 w-1/3"></div>
+          <div class="skeleton h-4 w-1/2"></div>
+          <div class="skeleton h-40 w-full"></div>
+        </div>
       }
     </div>
   `,
 })
-export default class JudgeDecklistDetailPage implements OnInit {
+export default class PlayerDecklistPage implements OnInit {
   readonly slug = input.required<string>();
   readonly userId = input.required<string>();
-  private readonly http = inject(HttpClient);
-  protected readonly decklist = signal<DecklistDetail | null>(null);
+  private readonly player = inject(PlayerService);
+
+  protected readonly decklist = signal<RivalDecklist | null>(null);
   protected readonly error = signal<string | null>(null);
 
-  async ngOnInit(): Promise<void> {
-    try {
-      const res = await firstValueFrom(
-        this.http.get<{ decklist: DecklistDetail }>(
-          `/api/judge/tournaments/${this.slug()}/decklists/${this.userId()}`
-        )
-      );
-      this.decklist.set(res.decklist);
-    } catch (e) {
-      this.error.set(apiErrorMessage(e));
-    }
-  }
-
-  protected sections(d: DecklistDetail) {
+  protected readonly sections = computed(() => {
+    const d = this.decklist();
+    if (!d) return [];
     return [
       { title: 'Pokémon', cards: d.parsed.pokemon },
       { title: 'Entrenador', cards: d.parsed.trainer },
       { title: 'Energía', cards: d.parsed.energy },
     ];
+  });
+
+  async ngOnInit(): Promise<void> {
+    try {
+      const res = await this.player.opponentDecklist(this.slug(), Number(this.userId()));
+      this.decklist.set(res.decklist);
+    } catch (e) {
+      this.error.set(apiErrorMessage(e));
+    }
   }
 
   protected count(cards: { quantity: number }[]): number {

@@ -57,6 +57,28 @@ export class PlayerService {
     return firstValueFrom(this.http.post<{ status: string }>(`/api/tournaments/${slug}/drop`, {}));
   }
 
+  /** Second post-registration step: confirm participation (requires submitted decklist). */
+  confirmParticipation(slug: string): Promise<{ status: string; participationConfirmedAt: string | null }> {
+    return firstValueFrom(
+      this.http.post<{ status: string; participationConfirmedAt: string | null }>(
+        `/api/tournaments/${slug}/confirm-participation`,
+        {}
+      )
+    );
+  }
+
+  /** Rival decklist (only when the tournament enables showOpponentDecklists). */
+  opponentDecklist(
+    slug: string,
+    userId: number
+  ): Promise<{ decklist: DecklistView & { playerName: string } }> {
+    return firstValueFrom(
+      this.http.get<{ decklist: DecklistView & { playerName: string } }>(
+        `/api/tournaments/${slug}/players/${userId}/decklist`
+      )
+    );
+  }
+
   myRegistrations(): Promise<{ registrations: MyRegistration[] }> {
     return firstValueFrom(
       this.http.get<{ registrations: MyRegistration[] }>('/api/my/registrations')

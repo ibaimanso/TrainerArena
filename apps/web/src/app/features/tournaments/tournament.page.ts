@@ -1,3 +1,4 @@
+import { DatePipe } from '@angular/common';
 import { Component, inject, input, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import {
@@ -12,7 +13,7 @@ import { TournamentHeaderComponent } from './tournament-header.component';
 
 /** Public tournament page (SPEC §12 /torneo/{slug}): info + context-dependent CTAs. */
 @Component({
-  imports: [RouterLink, TournamentHeaderComponent],
+  imports: [RouterLink, DatePipe, TournamentHeaderComponent],
   template: `
     @if (notFound()) {
       <div class="empty-state">
@@ -83,6 +84,18 @@ import { TournamentHeaderComponent } from './tournament-header.component';
             </div>
           </dl>
 
+          @if (t.format === 'league' && t.matchdays.length > 0) {
+            <h3 class="section-title mt-6">Jornadas de la liga</h3>
+            <ul class="mt-3 grid gap-2 text-sm sm:grid-cols-2 lg:grid-cols-3">
+              @for (m of t.matchdays; track m.matchdayNumber) {
+                <li class="flex items-center gap-2.5 rounded-lg bg-stone-50 dark:bg-stone-800/40 p-3">
+                  <span class="badge-brand shrink-0">J{{ m.matchdayNumber }}</span>
+                  <span class="font-medium text-stone-900 dark:text-stone-100">{{ m.scheduledAt | date: 'EEE d MMM, HH:mm' }}</span>
+                </li>
+              }
+            </ul>
+          }
+
           @if (t.description) {
             <h3 class="section-title mt-6">Descripción</h3>
             <p class="mt-2 whitespace-pre-line text-sm leading-relaxed text-stone-700 dark:text-stone-300">{{ t.description }}</p>
@@ -103,7 +116,64 @@ import { TournamentHeaderComponent } from './tournament-header.component';
                 <p class="alert-warning" role="status">Debes verificar tu email antes de inscribirte.</p>
                 <a routerLink="/verificar-email" class="btn-warning">Verificar email</a>
               } @else if (v.registrationStatus === 'active') {
-                <p class="alert-success" role="status">Ya estás inscrito en este torneo.</p>
+                @if (showTwoStepChecklist(t.status, v)) {
+                  @if (v.decklistSubmitted && v.participationConfirmed) {
+                    <p class="alert-success" role="status">
+                      <strong>¡Todo listo!</strong> Has enviado tu decklist y confirmado tu
+                      participación. Serás emparejado en la primera ronda.
+                    </p>
+                  } @else {
+                    <p class="alert-warning" role="alert">
+                      <strong>Inscripción incompleta: te quedan
+                      {{ v.decklistSubmitted ? '1 paso' : '2 pasos' }}.</strong>
+                      Si no envías tu decklist y confirmas tu participación antes de que se
+                      genere la primera ronda, <strong>no serás emparejado y no jugarás el
+                      torneo</strong>.
+                    </p>
+                  }
+                  <ol class="space-y-2.5">
+                    <li class="flex items-start gap-2.5 rounded-lg border p-3"
+                        [class]="v.decklistSubmitted ? 'border-green-200 dark:border-green-900 bg-green-50/60 dark:bg-green-950/30' : 'border-stone-200 dark:border-stone-800'">
+                      <span class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold"
+                            [class]="v.decklistSubmitted ? 'bg-green-600 text-white' : 'bg-stone-200 dark:bg-stone-700 text-stone-600 dark:text-stone-300'">
+                        @if (v.decklistSubmitted) { ✓ } @else { 1 }
+                      </span>
+                      <span class="flex-1">
+                        <span class="font-medium text-stone-900 dark:text-stone-100">Envía tu decklist</span>
+                        @if (!v.decklistSubmitted) {
+                          <a [routerLink]="['/torneo', t.slug, 'mi-decklist']" class="link ml-2">Enviar ahora</a>
+                        } @else {
+                          <span class="ml-2 text-xs text-green-700 dark:text-green-400">Enviada</span>
+                        }
+                      </span>
+                    </li>
+                    <li class="flex items-start gap-2.5 rounded-lg border p-3"
+                        [class]="v.participationConfirmed ? 'border-green-200 dark:border-green-900 bg-green-50/60 dark:bg-green-950/30' : 'border-stone-200 dark:border-stone-800'">
+                      <span class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold"
+                            [class]="v.participationConfirmed ? 'bg-green-600 text-white' : 'bg-stone-200 dark:bg-stone-700 text-stone-600 dark:text-stone-300'">
+                        @if (v.participationConfirmed) { ✓ } @else { 2 }
+                      </span>
+                      <span class="flex-1">
+                        <span class="font-medium text-stone-900 dark:text-stone-100">Confirma tu participación</span>
+                        @if (v.participationConfirmed) {
+                          <span class="ml-2 text-xs text-green-700 dark:text-green-400">Confirmada</span>
+                        } @else if (v.decklistSubmitted) {
+                          <button type="button" (click)="confirmParticipation()"
+                                  [disabled]="confirming()" class="btn-primary btn-sm ml-2">
+                            {{ confirming() ? 'Confirmando…' : 'Confirmar participación' }}
+                          </button>
+                        } @else {
+                          <span class="ml-2 text-xs text-stone-500 dark:text-stone-400">Disponible tras enviar la decklist</span>
+                        }
+                      </span>
+                    </li>
+                  </ol>
+                  @if (confirmError()) {
+                    <p class="alert-error" role="alert">{{ confirmError() }}</p>
+                  }
+                } @else {
+                  <p class="alert-success" role="status">Ya estás inscrito en este torneo.</p>
+                }
                 @if (dropError()) {
                   <p class="alert-error" role="alert">{{ dropError() }}</p>
                 }
@@ -202,6 +272,30 @@ export default class TournamentPage implements OnInit {
   protected readonly notFound = signal(false);
   protected readonly dropping = signal(false);
   protected readonly dropError = signal<string | null>(null);
+  protected readonly confirming = signal(false);
+  protected readonly confirmError = signal<string | null>(null);
+
+  /** The two-step checklist only matters before round 1 is generated. */
+  protected showTwoStepChecklist(status: string, v: ViewerContext): boolean {
+    return (
+      (status === 'registration_open' || status === 'registration_closed') ||
+      // already playing but never completed the steps → keep the warning visible
+      (status === 'in_progress' && !(v.decklistSubmitted && v.participationConfirmed))
+    );
+  }
+
+  protected async confirmParticipation(): Promise<void> {
+    this.confirming.set(true);
+    this.confirmError.set(null);
+    try {
+      await this.player.confirmParticipation(this.slug());
+      await this.reload();
+    } catch (e) {
+      this.confirmError.set(apiErrorMessage(e));
+    } finally {
+      this.confirming.set(false);
+    }
+  }
 
   async ngOnInit(): Promise<void> {
     await this.auth.loadOnce();

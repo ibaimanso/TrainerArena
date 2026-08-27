@@ -13,6 +13,8 @@ export interface AdminRegistration {
   status: RegistrationStatus;
   registeredAt: string;
   droppedAt: string | null;
+  decklistSubmitted: boolean;
+  participationConfirmed: boolean;
 }
 
 export interface AdminJudgeApplication {

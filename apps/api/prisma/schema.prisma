@@ -29,6 +29,11 @@ enum TournamentStatus {
   cancelled
 }
 
+enum TournamentFormat {
+  standard
+  league
+}
+
 enum RegistrationStatus {
   pending_payment
   active
@@ -164,6 +169,9 @@ model Tournament {
   description      String?
   startAt          DateTime         @map("start_at")
   status           TournamentStatus @default(draft)
+  format           TournamentFormat @default(standard)
+  /// Players may see rivals' locked decklists from the standings table.
+  showOpponentDecklists Boolean     @default(false) @map("show_opponent_decklists")
   maxPlayers       Int              @map("max_players")
   swissRounds      Int              @map("swiss_rounds")
   roundTimeMinutes Int              @map("round_time_minutes")
@@ -191,8 +199,25 @@ model Tournament {
   pairingHistory    PairingHistory[]
   judgeCalls        JudgeCall[]
   payments          Payment[]
+  matchdays         LeagueMatchday[]
 
   @@map("tournaments")
+}
+
+/// League format only: scheduled date of each matchday (jornada). Matchday N
+/// corresponds to swiss round N.
+model LeagueMatchday {
+  id             Int      @id @default(autoincrement())
+  tournamentId   Int      @map("tournament_id")
+  matchdayNumber Int      @map("matchday_number") @db.SmallInt
+  scheduledAt    DateTime @map("scheduled_at")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+
+  @@unique([tournamentId, matchdayNumber])
+  @@map("league_matchdays")
 }
 
 model TournamentRegistration {
@@ -205,6 +230,9 @@ model TournamentRegistration {
   email               String
   phone               String?
   registeredAt        DateTime           @default(now()) @map("registered_at")
+  /// Second post-registration step: the player confirmed they will play after
+  /// submitting their decklist. Both are required to be paired in round 1.
+  participationConfirmedAt DateTime?     @map("participation_confirmed_at")
   droppedAt           DateTime?          @map("dropped_at")
   droppedAfterRoundId Int?               @map("dropped_after_round_id")
   createdAt           DateTime           @default(now()) @map("created_at")

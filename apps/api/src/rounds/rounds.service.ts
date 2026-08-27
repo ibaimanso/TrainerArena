@@ -108,6 +108,13 @@ export class RoundsService {
       );
     }
 
+    // Two-step registration: players who never submitted a decklist or never
+    // confirmed participation are dropped before R1 — they are not paired and
+    // simply do not play the tournament.
+    if (nextNumber === 1) {
+      await this.dropUnreadyBeforeRound1(tournament);
+    }
+
     const snapshot = await this.snapshots.build(tournament);
     const actives = activePlayersForRound(snapshot.players, nextNumber);
     if (actives.length < 2) {
@@ -157,6 +164,40 @@ export class RoundsService {
       manualRequired: manual !== null,
       manualMessage: manual?.message,
     };
+  }
+
+  /**
+   * Drops active registrations that did not complete the two post-registration
+   * steps (submit decklist + confirm participation) before round 1 pairings
+   * are generated. droppedAfterRoundId stays null: excluded from every round.
+   */
+  private async dropUnreadyBeforeRound1(tournament: Tournament): Promise<void> {
+    const [actives, decklists] = await Promise.all([
+      this.prisma.tournamentRegistration.findMany({
+        where: { tournamentId: tournament.id, status: 'active' },
+        select: { id: true, userId: true, participationConfirmedAt: true },
+      }),
+      this.prisma.decklist.findMany({
+        where: { tournamentId: tournament.id },
+        select: { userId: true },
+      }),
+    ]);
+    const hasDecklist = new Set(decklists.map((d) => d.userId));
+    const unready = actives.filter(
+      (r) => r.participationConfirmedAt === null || !hasDecklist.has(r.userId)
+    );
+    if (unready.length === 0) return;
+    await this.prisma.tournamentRegistration.updateMany({
+      where: { id: { in: unready.map((r) => r.id) } },
+      data: { status: 'dropped', droppedAt: new Date() },
+    });
+    await this.audit.log({
+      actorId: null,
+      action: 'registration.dropped_unready_r1',
+      targetType: 'tournament',
+      targetId: tournament.id,
+      payload: { user_ids: unready.map((r) => r.userId) },
+    });
   }
 
   /** Persists a swiss pairing plan: matches, immediate bye result, pairing history. */

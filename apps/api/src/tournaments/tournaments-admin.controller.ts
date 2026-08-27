@@ -23,6 +23,8 @@ interface AdminTournamentView {
   name: string;
   status: TournamentStatus;
   startAt: string;
+  format: string;
+  showOpponentDecklists: boolean;
   maxPlayers: number;
   activeCount: number;
   feeAmount: number;
@@ -42,6 +44,8 @@ function toAdminView(t: Tournament & { activeCount?: number }): AdminTournamentV
     name: t.name,
     status: t.status as TournamentStatus,
     startAt: t.startAt.toISOString(),
+    format: t.format,
+    showOpponentDecklists: t.showOpponentDecklists,
     maxPlayers: t.maxPlayers,
     activeCount: t.activeCount ?? 0,
     feeAmount: t.feeAmount,

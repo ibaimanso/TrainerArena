@@ -125,6 +125,58 @@ export class PublicRoundsController {
     return payload;
   }
 
+  /**
+   * Per-matchday standings (league format): standings computed from the
+   * matches of a single swiss round. Not cached (cheap, on demand).
+   */
+  @Public()
+  @Get('rounds/:n/standings')
+  async roundStandings(@Param('slug') slug: string, @Param('n') n: string) {
+    const tournament = await this.tournaments.publicBySlugOrFail(slug);
+    const roundNumber = Number(n);
+    const round = await this.prisma.round.findFirst({
+      where: { tournamentId: tournament.id, roundNumber, phase: 'swiss' },
+    });
+    if (!round) throw new NotFoundException('La jornada no existe.');
+
+    const [snapshot, registrations] = await Promise.all([
+      this.snapshots.build(tournament),
+      this.prisma.tournamentRegistration.findMany({
+        where: { tournamentId: tournament.id, status: { in: ['active', 'dropped'] } },
+      }),
+    ]);
+    const roundOnly = {
+      ...snapshot,
+      matches: snapshot.matches.filter((m) => m.roundNumber === roundNumber),
+    };
+    const playedIds = new Set(
+      roundOnly.matches.flatMap((m) =>
+        [m.playerAId, m.playerBId].filter((id): id is number => id !== null)
+      )
+    );
+    const registrationByUser = new Map(registrations.map((r) => [r.userId, r]));
+    const entries = computeStandings(roundOnly).filter((e) => playedIds.has(e.playerId));
+    return {
+      round: { roundNumber: round.roundNumber, status: round.status },
+      standings: entries.map((e, index) => {
+        const registration = registrationByUser.get(e.playerId);
+        return {
+          position: index + 1,
+          playerId: e.playerId,
+          playerName: registration?.fullName ?? `Jugador ${e.playerId}`,
+          tcgLiveUsername: registration?.tcgLiveUsername ?? '',
+          dropped: registration?.status === 'dropped',
+          points: e.matchPoints,
+          wins: e.wins,
+          losses: e.losses,
+          draws: e.draws,
+          owp: e.owp,
+          oowp: e.oowp,
+        };
+      }),
+    };
+  }
+
   /** Round list for the public pairings selector. */
   @Public()
   @Get('rounds')
